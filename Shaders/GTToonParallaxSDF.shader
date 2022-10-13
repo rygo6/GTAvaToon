@@ -110,7 +110,9 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
     {
         Tags
         {
-            "Queue" = "Geometry+10" "RenderType" = "Opaque"
+            "Queue" = "Geometry+10" 
+            "RenderType" = "Opaque" 
+            "IgnoreProjector" = "True"
         }
 
         Pass
@@ -254,8 +256,34 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             }
             ENDHLSL
         }
-    }
+        
+        // https://docs.unity3d.com/540/Documentation/Manual/SL-VertexFragmentShaderExamples.html
+        Pass
+        {
+            Tags {"LightMode"="ShadowCaster"}
 
-    // Enable ShadowCaster by fallback to Standard
-    Fallback "Standard"
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_shadowcaster
+            #include "UnityCG.cginc"
+
+            struct v2f { 
+                V2F_SHADOW_CASTER;
+            };
+
+            v2f vert(appdata_base v)
+            {
+                v2f o;
+                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+                return o;
+            }
+
+            float4 frag(v2f i) : SV_Target
+            {
+                SHADOW_CASTER_FRAGMENT(i)
+            }
+            ENDCG
+        }
+    }
 }
