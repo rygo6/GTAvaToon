@@ -199,6 +199,7 @@ Shader "GeoTetra/GTToonMatcap"
             ENDHLSL
         }
 
+        // https://docs.unity3d.com/540/Documentation/Manual/SL-VertexFragmentShaderExamples.html
         Pass
         {
             Tags {"LightMode"="ShadowCaster"}
