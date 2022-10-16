@@ -133,6 +133,7 @@ float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ
 	float minDepth = 1;
 	float maxDepth = 0;
 	float meanDepth = 0;
+	UNITY_UNROLL
 	for (int i = 0; i < DIRECTIONAL_SAMPLE_COUNT; i++)
 	{
 		float depth = samples[i].z;
