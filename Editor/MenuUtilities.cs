@@ -1,16 +1,13 @@
-﻿using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
-using System.IO;
-using Unity.EditorCoroutines.Editor;
+﻿using System.Linq;
 using UnityEditor;
-using UnityEngine;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace GeoTetra.GTAvaUtil
 {
     public class MenuUtilites
     {
+        const string okText = "Ok";
+        
         [MenuItem("Tools/GeoTetra/GTAvaToon/Check for Update...", false)]
         static void CheckForUpdate()
         {

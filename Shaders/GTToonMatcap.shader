@@ -89,6 +89,9 @@ Shader "GeoTetra/GTToonMatcap"
         _DirectOutputBlackLevel ("DirectOutputBlackLevel", Range(0,1)) = .2
         _DirectOutputWhiteLevel ("DirectOutputWhiteLevel", Range(0,1)) = 1
         _DirectGamma ("DirectGamma", Range(0,2)) = .5        
+    	
+    	[Header(Light Probes)]
+    	_ProbeAverage ("Probe Average", Range(1,100)) = 1
     }
     Subshader
     {

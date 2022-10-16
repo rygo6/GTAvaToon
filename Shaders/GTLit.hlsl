@@ -29,6 +29,8 @@ float _RimAddBias;
 float _RimAddColorBlend;
 float4 _RimAddColor;
 
+float _ProbeAverage;
+
 struct LitData
 {
     float2 matcapUV;
@@ -145,11 +147,15 @@ float shEvaluateDiffuseL1Geomerics_local(float L0, float3 L1, float3 n)
 }
 float3 BetterSH9(float3 normal)
 {
-    float3 L0 = float3(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w);
+    float4 SHAr = _ProbeAverage > 99 ? unity_SHAr : ((unity_SHAr * _ProbeAverage) + unity_SHAg + unity_SHAb) / (2.0 + _ProbeAverage);
+    float4 SHAg = _ProbeAverage > 99 ? unity_SHAg : (unity_SHAr + (unity_SHAg * _ProbeAverage) + unity_SHAb) / (2.0 + _ProbeAverage);
+    float4 SHAb = _ProbeAverage > 99 ? unity_SHAb : (unity_SHAr + unity_SHAg + (unity_SHAb * _ProbeAverage)) / (2.0 + _ProbeAverage);
+    
+    float3 L0 = float3(SHAr.w, SHAg.w, SHAb.w);
     float3 nonLinearSH = float3(0, 0, 0);
-    nonLinearSH.r = shEvaluateDiffuseL1Geomerics_local(L0.r, unity_SHAr.xyz, normal);
-    nonLinearSH.g = shEvaluateDiffuseL1Geomerics_local(L0.g, unity_SHAg.xyz, normal);
-    nonLinearSH.b = shEvaluateDiffuseL1Geomerics_local(L0.b, unity_SHAb.xyz, normal);
+    nonLinearSH.r = shEvaluateDiffuseL1Geomerics_local(L0.r, SHAr.xyz, normal);
+    nonLinearSH.g = shEvaluateDiffuseL1Geomerics_local(L0.g, SHAg.xyz, normal);
+    nonLinearSH.b = shEvaluateDiffuseL1Geomerics_local(L0.b, SHAb.xyz, normal);
     nonLinearSH = max(nonLinearSH, 0);
     return nonLinearSH;
 }
