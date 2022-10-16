@@ -1,8 +1,6 @@
 {
     "name": "GeoTetra.GTAvaToon.Editor",
-    "references": [
-        "Unity.EditorCoroutines.Editor"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
