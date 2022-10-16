@@ -89,7 +89,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         _RimAddColorBlend ("Rim Add Final Color Blend", Range(0,1)) = .2
 
     	[Header(Rim Darken)]
-        _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.8,1.2)) = .98
+        _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.8,1.2)) = .99
         _RimMultiplyGradientMax ("Rim Darken Gradient Max", Range(.8,1.2)) = 1
     	_RimMultiplyEdgeSoftness ("Rim Darken Edge Softness", Range(0,2)) = .5
 
