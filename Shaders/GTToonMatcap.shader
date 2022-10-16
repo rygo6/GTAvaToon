@@ -23,7 +23,7 @@ Shader "GeoTetra/GTToonMatcap"
         [Header(Local Adaptive Depth Outline)]
         _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0, .1)) = .05
         _DepthMult ("Depth Outline Multiplier", Range(0, 4)) = 1
-        _DepthBias ("Depth Outline Bias", Range(0, 10)) = .5
+        _DepthBias ("Depth Outline Bias", Range(.5, 1.5)) = .6
         _FarDepthMult ("Far Depth Outline Multiplier", Range(0, 4)) = .5
         
         [Header(Depth Contrast Outline)]
@@ -37,7 +37,7 @@ Shader "GeoTetra/GTToonMatcap"
 
         [Header(Far Depth Outline)]
         //    	[Tooltip(Distance with Depth Multiplier fades into Far Depth Multiplier)]
-        _FarDepthSampleDist ("Far Depth Outline Distance", Range(0,10)) = 3
+        _FarDepthSampleDist ("Far Depth Outline Distance", Range(0,10)) = 10
 
         [Header(Concave Normal Outline Sampling)]
         _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 3
@@ -56,7 +56,7 @@ Shader "GeoTetra/GTToonMatcap"
 
         [Header(Far Outline Normal)]
         //    	[Tooltip(Distance with Normal Multiplier fades into Far Normal Multiplier)]
-        _FarNormalSampleDist ("Far Normal Outline Distance", Range(0,10)) = 3
+        _FarNormalSampleDist ("Far Normal Outline Distance", Range(0,10)) = 10
 
         [Header(### Shading)]
 
