@@ -158,6 +158,7 @@ Shader "GeoTetra/GTToonMatcap"
             };
 
 			sampler2D _MainTex;
+			float4 _MainTex_ST;
             float4 _Color;
 	                    
             v2f vert(const appdata v)
@@ -186,7 +187,7 @@ Shader "GeoTetra/GTToonMatcap"
             	const float3 normalizedWorldSpaceNormal = normalize(i.worldNormal);
                 const float2 centerUV  = i.scrPos.xy / i.scrPos.w;
 
-                float4 sample = tex2D(_MainTex, i.uv0) * _Color;
+                float4 sample = tex2D(_MainTex, TRANSFORM_TEX(i.uv0, _MainTex)) * _Color;
                 float3 diffuse = sample.xyz;
             	
             	applyVertexColors(diffuse, i.color, sample.a);
