@@ -37,10 +37,11 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         _DepthOffset ("Depth Bounding Offset", Range(-1,1)) = 0
 
         [Header(Local Adaptive Depth Outline)]
-        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0, .1)) = .05
-        _DepthMult ("Depth Outline Multiplier", Range(0, 4)) = 1
-        _DepthBias ("Depth Outline Bias", Range(0, 10)) = .6
-        _FarDepthMult ("Far Depth Outline Multiplier", Range(0, 4)) = .5
+        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.0, .1)) = .03
+        _FarLocalEqualizeThreshold ("Far Depth Local Adaptive Equalization Threshold", Range(0.02, .1)) = .08
+//        _DepthMult ("Depth Outline Multiplier", Range(0, 4)) = 1
+//        _DepthBias ("Depth Outline Bias", Range(0, 10)) = .6
+//        _FarDepthMult ("Far Depth Outline Multiplier", Range(0, 4)) = .5
         
         [Header(Depth Contrast Outline)]
         _DepthContrastMult ("Depth Contrast Outline Multiplier", Range(0, 2)) = 2
@@ -56,19 +57,19 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         _FarDepthSampleDist ("Far Depth Outline Distance", Range(0,10)) = 10
 
         [Header(Concave Normal Outline Sampling)]
-        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 3
-        _NormalSampleBias ("Concave Outline Sampling Bias", Range(0,4)) = .5
-        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 2
+        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
+//        _NormalSampleBias ("Concave Outline Sampling Bias", Range(0,4)) = .5
+        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
 
         [Header(Convex Normal Outline Sampling)]
-        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = 1
-        _ConvexSampleBias ("Convex Outline Sampling Bias", Range(0,4)) = 1
+        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = .5
+//        _ConvexSampleBias ("Convex Outline Sampling Bias", Range(0,4)) = 1
         _FarConvexSampleMult ("Far Convex Outline Multiplier", Range(0,10)) = .5
 
         [Header(Normal Outline Gradient)]
-        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = .1
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .9
-        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .5
+        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = .02
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .4
+        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
 
         [Header(Far Outline Normal)]
         //    	[Tooltip(Distance with Normal Multiplier fades into Far Normal Multiplier)]
@@ -141,16 +142,17 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             }
 
             HLSLPROGRAM
+            #pragma target 5.0
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fwdbase
+            #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED
+
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
             #include "GTToonOutline.hlsl"
             #include "GTLit.hlsl"
             #include "GTParallax.hlsl"
-
-            #pragma target 5.0
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_fwdbase
             
             struct appdata
             {
