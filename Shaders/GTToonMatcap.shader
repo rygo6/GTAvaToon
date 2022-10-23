@@ -5,11 +5,13 @@ Shader "GeoTetra/GTToonMatcap"
         [Header(Base)]
         _Color ("Main Color", Color) = (1, 1, 1, 1)
         _MainTex ("Main Texture", 2D) = "white" {}
+        _AddTex ("Add Texture", 2D) = "white" {}
         
         [Header(### Outline)]
 
         [Header(Outline Color)]
         _OutlineColor ("Outline Color", Color) = (0,0,0,0)
+        _OutlineColorTex ("Outline Color Texture", Color) = (0,0,0,0)
 
         [Header(Outline Size)]
         _LineSizeNear ("Line Size Near", Range(0, 2)) = .1
@@ -18,21 +20,23 @@ Shader "GeoTetra/GTToonMatcap"
 
         [Header(Depth Map)]
         _BoundingExtents ("Depth Bounding Extents", Float) = .5
-        _DepthOffset ("Depth Bounding Offset", Range(-1,1)) = 0
+        _DepthOffset ("Depth Bounding Offset", Range(-.1,.1)) = 0
+    	_DepthOffsetTex ("Depth Offset Texture", Color) = (0,0,0,0)
 
         [Header(Local Adaptive Depth Outline)]
-        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0, .1)) = .05
-        _DepthMult ("Depth Outline Multiplier", Range(0, 4)) = 1
-        _DepthBias ("Depth Outline Bias", Range(.5, 1.5)) = .6
-        _FarDepthMult ("Far Depth Outline Multiplier", Range(0, 4)) = .5
+        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.0, .1)) = .03
+        _FarLocalEqualizeThreshold ("Far Depth Local Adaptive Equalization Threshold", Range(0.02, .1)) = .08
+//        _DepthMult ("Depth Outline Multiplier", Range(0, 5)) = 1
+//        _FarDepthMult ("Far Depth Outline Multiplier", Range(0, 5)) = 10
+//    	_DepthBias ("Depth Outline Bias", Range(.5, 1.5)) = .6
         
         [Header(Depth Contrast Outline)]
         _DepthContrastMult ("Depth Contrast Outline Multiplier", Range(0, 2)) = 2
-        _FarDepthContrastMult ("Far Depth Contrast Outline Multiplier", Range(0, 2)) = .5
+        _FarDepthContrastMult ("Far Depth Contrast Outline Multiplier", Range(0, 2)) = 2
 
         [Header(Depth Outline Gradient)]
-        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0.05
-        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.5
+        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0.02
+        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
         _DepthEdgeSoftness ("Depth Outline Edge Softness", Range(0, 2)) = .25
 
         [Header(Far Depth Outline)]
@@ -40,19 +44,19 @@ Shader "GeoTetra/GTToonMatcap"
         _FarDepthSampleDist ("Far Depth Outline Distance", Range(0,10)) = 10
 
         [Header(Concave Normal Outline Sampling)]
-        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 3
-        _NormalSampleBias ("Concave Outline Sampling Bias", Range(0,4)) = .5
-        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 2
+        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
+//        _NormalSampleBias ("Concave Outline Sampling Bias", Range(0,4)) = .5
+        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
 
         [Header(Convex Normal Outline Sampling)]
-        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = 1
-        _ConvexSampleBias ("Convex Outline Sampling Bias", Range(0,4)) = 1
+        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = .5
+//        _ConvexSampleBias ("Convex Outline Sampling Bias", Range(0,4)) = 1
         _FarConvexSampleMult ("Far Convex Outline Multiplier", Range(0,10)) = .5
 
         [Header(Normal Outline Gradient)]
-        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = .1
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .9
-        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .5
+        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = .02
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .4
+        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
 
         [Header(Far Outline Normal)]
         //    	[Tooltip(Distance with Normal Multiplier fades into Far Normal Multiplier)]
@@ -73,8 +77,8 @@ Shader "GeoTetra/GTToonMatcap"
         _RimAddColorBlend ("Rim Add Final Color Blend", Range(0,1)) = .2
 
     	[Header(Rim Darken)]
-        _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.8,1.2)) = .99
-        _RimMultiplyGradientMax ("Rim Darken Gradient Max", Range(.8,1.2)) = 1
+        _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.95,1.05)) = .995
+        _RimMultiplyGradientMax ("Rim Darken Gradient Max", Range(.95,1.05)) = 1
     	_RimMultiplyEdgeSoftness ("Rim Darken Edge Softness", Range(0,2)) = .5
 
         [Header(Vertex Color)]
@@ -103,10 +107,10 @@ Shader "GeoTetra/GTToonMatcap"
         Pass
         {        	
 	        HLSLPROGRAM
-	        #include "GTToonOutlineGrabPass.hlsl"
 	        #pragma target 5.0
             #pragma vertex grabpass_vert
             #pragma fragment grabpass_frag
+	        #include "GTToonOutlineGrabPass.hlsl"
             ENDHLSL
         }
 
@@ -122,15 +126,17 @@ Shader "GeoTetra/GTToonMatcap"
                 "LightMode" = "ForwardBase"
             }
         	
-	        HLSLPROGRAM
-	        #include "UnityCG.cginc"
-	        #include "AutoLight.cginc"
-	        #include "GTToonOutline.hlsl"
-	        #include "GTLit.hlsl"
+	        HLSLPROGRAM	        
             #pragma target 5.0
             #pragma vertex vert
             #pragma fragment frag
 	        #pragma multi_compile_fwdbase
+	        #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED
+
+	        #include "UnityCG.cginc"
+	        #include "AutoLight.cginc"
+	        #include "GTToonOutline.hlsl"
+	        #include "GTLit.hlsl"
 
             struct appdata
             {

@@ -20,6 +20,7 @@ float _FarNormalSampleDist;
 float _FarDepthSampleDist;
 
 float _LocalEqualizeThreshold;
+float _FarLocalEqualizeThreshold;
 float _DepthMult;
 float _FarDepthMult;
 float _DepthBias;
@@ -40,40 +41,57 @@ float _NormalGradientMax;
 
 float _TexelSampleOffset;
 
-#define DIRECTIONAL_SAMPLE_COUNT 4
-#define KERNEL_SAMPLE_COUNT 9
+float _FlipX;
+
 // N E S W
+#define DIRECTIONAL_SAMPLE_COUNT 4
 static const float2 _SampleOffsets[DIRECTIONAL_SAMPLE_COUNT] = { float2(0,1), float2(1,0), float2(0,-1), float2(-1,0) };
+
+// #define NINE_KERNEL
+#define FIVE_KERNEL
+
+#ifdef NINE_KERNEL
 // M N E S W NE NW SE SW
-static const float _KernelXSteps[KERNEL_SAMPLE_COUNT] = { 1, 1, 2, 1, 0, 2, 0, 2, 0 };
-static const float _KernelYSteps[KERNEL_SAMPLE_COUNT] = { 1, 2, 1, 0, 1, 2, 2, 0, 0 };
+#define KERNEL_SAMPLE_COUNT 9
 static const float2 _KernelOffsets[KERNEL_SAMPLE_COUNT] = {
 	float2(0, 0),
+	float2(1, 1), float2(-1, 1), float2(1, -1), float2(-1, -1),
 	float2(0, 1), float2(1, 0), float2(0, -1), float2(-1, 0),
-	float2(1, 1), float2(-1, 1), float2(1, -1), float2(-1, -1)
 };
+#endif
+
+#ifdef FIVE_KERNEL
+// M NE NW SE SW
+#define KERNEL_SAMPLE_COUNT 5
+static const float2 _KernelOffsets[KERNEL_SAMPLE_COUNT] = {
+	float2(0, 0),
+	float2(1, 1), float2(-1, 1), float2(1, -1), float2(-1, -1),
+};
+#endif
 
 struct SampleData {
-	float3 samples[3][3][4];
+	float3 samples[KERNEL_SAMPLE_COUNT][4];
 	float minZ;
 	float maxZ;
 	float contrastZ;
 };
 
 struct ToonData {
-    float3 values[3][3];
+	float3 values[KERNEL_SAMPLE_COUNT];
 	
-	float3 m() { return values[1][1]; }
+	float3 m() { return values[0]; }
 	
-	float3 n()	{ return values[1][2]; }
-	float3 e()	{ return values[2][1]; }
-	float3 s()	{ return values[1][0]; }
-	float3 w()	{ return values[0][1]; }
-	
-	float3 ne()	{ return values[2][2]; }
-	float3 nw()	{ return values[0][2]; }
-	float3 se()	{ return values[2][0]; }
-	float3 sw()	{ return values[0][0]; }
+	float3 ne()	{ return values[1]; }
+	float3 nw()	{ return values[2]; }
+	float3 se()	{ return values[3]; }
+	float3 sw()	{ return values[4]; }
+
+#ifdef NINE_KERNEL
+	float3 n()	{ return values[5]; }
+	float3 e()	{ return values[6]; }
+	float3 s()	{ return values[7]; }
+	float3 w()	{ return values[8]; }
+#endif
 };
 
 inline float invLerp(float from, float to, float value)
@@ -106,7 +124,7 @@ inline SampleData SamplePassKernel(float2 uv, float2 kernelSize)
 	UNITY_UNROLL
 	for (int i = 0; i < KERNEL_SAMPLE_COUNT; ++i)
 	{
-		SamplePass(sd.samples[_KernelXSteps[i]][_KernelYSteps[i]],
+		SamplePass(sd.samples[i],
 			sd.minZ,
 			sd.maxZ,
 			uv + _GTToonGrabTexture_TexelSize * _KernelOffsets[i],
@@ -118,7 +136,12 @@ inline SampleData SamplePassKernel(float2 uv, float2 kernelSize)
 	return sd;
 }
 
-float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ) {
+inline float linearStep(float a, float b, float x)
+{
+	return saturate((x - a)/(b - a));
+}
+
+float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ, float dist) {
 
 	const float3 nNorm = float3(samples[0].xy, 0.5);
 	const float3 eNorm = float3(samples[1].xy, 0.5);
@@ -132,34 +155,35 @@ float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ
 
 	float minDepth = 1;
 	float maxDepth = 0;
-	float meanDepth = 0;
 	UNITY_UNROLL
 	for (int i = 0; i < DIRECTIONAL_SAMPLE_COUNT; i++)
 	{
 		float depth = samples[i].z;
 		minDepth = min(minDepth, depth);
 		maxDepth = max(maxDepth, depth);
-		meanDepth += depth;
 	}
-		
-	maxDepth = smoothstep(minZ, maxZ + _LocalEqualizeThreshold, maxDepth);
-	minDepth = smoothstep(minZ, maxZ + _LocalEqualizeThreshold, minDepth);
+
+	const float threshold = lerp(_LocalEqualizeThreshold, _FarLocalEqualizeThreshold, saturate(dist / _FarDepthSampleDist));
+	// const float threshold = _LocalEqualizeThreshold;
+	maxDepth = smoothstep(minZ, maxZ + threshold, maxDepth);
+	minDepth = smoothstep(minZ, maxZ + threshold, minDepth);
 	float depthContrast = maxDepth - minDepth;
     
 	return float3(depthContrast, concavity, convexity);
 }
 
-inline ToonData CalcToonKernel(SampleData sd)
+inline ToonData CalcToonKernel(SampleData sd, float dist)
 {
 	ToonData td;
 
 	UNITY_UNROLL
 	for (int i = 0; i < KERNEL_SAMPLE_COUNT; ++i)
 	{
-		td.values[_KernelXSteps[i]][_KernelYSteps[i]] = CalcToon(
-			sd.samples[_KernelXSteps[i]][_KernelYSteps[i]],
+		td.values[i] = CalcToon(
+			sd.samples[i],
 			sd.minZ,
-			sd.maxZ);
+			sd.maxZ,
+			dist);
 	}
 
 	return td;
@@ -168,9 +192,19 @@ inline ToonData CalcToonKernel(SampleData sd)
 // partly derived from https://catlikecoding.com/unity/tutorials/advanced-rendering/fxaa/
 inline float3 DeterminePixelBlendFactor (ToonData td)
 {
+#ifdef NINE_KERNEL
 	float3 filter = 2 * (td.n() + td.e() + td.s() + td.w());
+	filter += td.m();
 	filter += td.ne() + td.nw() + td.se() + td.sw();
-	filter *= 1.0 / 12;
+	filter *= 1.0 / 13;
+#endif
+
+#ifdef FIVE_KERNEL
+	float3 filter = td.m() * 2;
+	filter += td.ne() + td.nw() + td.se() + td.sw();
+	filter /= 6.0;
+#endif
+	
 	const float3 blendFactor = smoothstep(0, 1, filter);
 	return blendFactor;
 }
@@ -192,19 +226,19 @@ inline float SampleToonOutline(float2 uv, float dist)
     const float2 kernelSize = texelSize * kernelSizeMultiplier;
 	
 	const SampleData sd = SamplePassKernel(uv, kernelSize);
-	const ToonData td = CalcToonKernel(sd);
+	const ToonData td = CalcToonKernel(sd, dist);
 	const float3 pixelBlend = DeterminePixelBlendFactor(td);
-		
+			
 	float depth = pixelBlend.x;
 	float averageDepth = sd.contrastZ;
 	float concavity = pixelBlend.y;
 	float convexity = pixelBlend.z;
 
 	// deal with depths
-	const float depthMult = lerp(_DepthMult, _FarDepthMult, saturate(dist / _FarDepthSampleDist));
-	depth = depth * depthMult;
-	depth = pow(depth, _DepthBias);
-	depth = saturate(depth);
+	// const float depthMult = lerp(_DepthMult, _FarDepthMult, saturate(dist / _FarDepthSampleDist));
+	// depth = depth * depthMult;
+	// depth = pow(depth, _DepthBias);
+	// depth = saturate(depth);
 	const float fDepth = fwidth(depth) * _DepthEdgeSoftness;;
 	depth = smoothstep(_DepthGradientMin - fDepth, _DepthGradientMax + fDepth, depth);
 
@@ -219,13 +253,13 @@ inline float SampleToonOutline(float2 uv, float dist)
 	// deal with curvatures
     const float normalMult = lerp(_NormalSampleMult, _FarNormalSampleMult, saturate(dist / _FarNormalSampleDist));
     concavity = concavity * normalMult;
-    concavity = pow(concavity, _NormalSampleBias);
-    concavity = saturate(concavity);
+    // concavity = pow(concavity, _NormalSampleBias);
+    // concavity = saturate(concavity);
     
     const float convexMult = lerp(_ConvexSampleMult, _FarConvexSampleMult, saturate(dist / _FarNormalSampleDist));
     convexity = convexity * convexMult;
-    convexity = pow(convexity, _ConvexSampleBias);
-    convexity = saturate(convexity);
+    // convexity = pow(convexity, _ConvexSampleBias);
+    // convexity = saturate(convexity);
 
     float curvature = max(concavity, convexity);
 	const float fMaxCurve = fwidth(curvature) * _NormalEdgeSoftness;
