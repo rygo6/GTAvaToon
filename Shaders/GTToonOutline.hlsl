@@ -17,19 +17,12 @@ float _ConvexSampleBias;
 float _FarConvexSampleMult;
 
 float _FarNormalSampleDist;
-float _FarDepthSampleDist;
 
+float _DepthSilhouetteMultiplier;
 float _LocalEqualizeThreshold;
-float _FarLocalEqualizeThreshold;
-float _DepthMult;
-float _FarDepthMult;
-float _DepthBias;
 float _DepthGradientMin;
 float _DepthGradientMax;
 float _DepthEdgeSoftness;
-
-float _DepthContrastMult;
-float _FarDepthContrastMult;
 
 float _LineSizeNear;
 float _LineSize;
@@ -38,10 +31,6 @@ float _NearLineSizeRange;
 float _NormalEdgeSoftness;
 float _NormalGradientMin;
 float _NormalGradientMax;
-
-float _TexelSampleOffset;
-
-float _FlipX;
 
 // N E S W
 #define DIRECTIONAL_SAMPLE_COUNT 4
@@ -141,7 +130,7 @@ inline float linearStep(float a, float b, float x)
 	return saturate((x - a)/(b - a));
 }
 
-float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ, float dist) {
+float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ) {
 
 	const float3 nNorm = float3(samples[0].xy, 0.5);
 	const float3 eNorm = float3(samples[1].xy, 0.5);
@@ -162,17 +151,15 @@ float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ
 		minDepth = min(minDepth, depth);
 		maxDepth = max(maxDepth, depth);
 	}
-
-	const float threshold = lerp(_LocalEqualizeThreshold, _FarLocalEqualizeThreshold, saturate(dist / _FarDepthSampleDist));
-	// const float threshold = _LocalEqualizeThreshold;
-	maxDepth = smoothstep(minZ, maxZ + threshold, maxDepth);
-	minDepth = smoothstep(minZ, maxZ + threshold, minDepth);
+	
+	maxDepth = smoothstep(minZ, maxZ + _LocalEqualizeThreshold, maxDepth);
+	minDepth = smoothstep(minZ, maxZ + _LocalEqualizeThreshold, minDepth);
 	float depthContrast = maxDepth - minDepth;
     
 	return float3(depthContrast, concavity, convexity);
 }
 
-inline ToonData CalcToonKernel(SampleData sd, float dist)
+inline ToonData CalcToonKernel(SampleData sd)
 {
 	ToonData td;
 
@@ -182,8 +169,7 @@ inline ToonData CalcToonKernel(SampleData sd, float dist)
 		td.values[i] = CalcToon(
 			sd.samples[i],
 			sd.minZ,
-			sd.maxZ,
-			dist);
+			sd.maxZ);
 	}
 
 	return td;
@@ -226,40 +212,30 @@ inline float SampleToonOutline(float2 uv, float dist)
     const float2 kernelSize = texelSize * kernelSizeMultiplier;
 	
 	const SampleData sd = SamplePassKernel(uv, kernelSize);
-	const ToonData td = CalcToonKernel(sd, dist);
+	const ToonData td = CalcToonKernel(sd);
 	const float3 pixelBlend = DeterminePixelBlendFactor(td);
 			
 	float depth = pixelBlend.x;
 	float averageDepth = sd.contrastZ;
 	float concavity = pixelBlend.y;
 	float convexity = pixelBlend.z;
-
-	// deal with depths
-	// const float depthMult = lerp(_DepthMult, _FarDepthMult, saturate(dist / _FarDepthSampleDist));
-	// depth = depth * depthMult;
-	// depth = pow(depth, _DepthBias);
-	// depth = saturate(depth);
-	const float fDepth = fwidth(depth) * _DepthEdgeSoftness;;
-	depth = smoothstep(_DepthGradientMin - fDepth, _DepthGradientMax + fDepth, depth);
-
+	
 	// I am adding contrast sample back over the as it has a wider falloff than pixelblend
-	// and can add to the softess/AA of the sillhouette line
-	const float contrastDepthMult = lerp(_DepthContrastMult, _FarDepthContrastMult, saturate(dist / _FarDepthSampleDist));
-	averageDepth = averageDepth * contrastDepthMult;
-	averageDepth = saturate(averageDepth);
+	// and can add to the softess/AA of the silhouette line. Also keeps silhouette at a distance.
+	// averageDepth *= _DepthContrastMult;
+	averageDepth = saturate(averageDepth * _DepthSilhouetteMultiplier);
 	
 	depth = max(depth, averageDepth);
 
-	// deal with curvatures
+	const float fDepth = fwidth(depth) * _DepthEdgeSoftness;;
+	depth = smoothstep(_DepthGradientMin - fDepth, _DepthGradientMax + fDepth, depth);
+
+	// curvatures
     const float normalMult = lerp(_NormalSampleMult, _FarNormalSampleMult, saturate(dist / _FarNormalSampleDist));
-    concavity = concavity * normalMult;
-    // concavity = pow(concavity, _NormalSampleBias);
-    // concavity = saturate(concavity);
+    concavity *= normalMult;
     
     const float convexMult = lerp(_ConvexSampleMult, _FarConvexSampleMult, saturate(dist / _FarNormalSampleDist));
-    convexity = convexity * convexMult;
-    // convexity = pow(convexity, _ConvexSampleBias);
-    // convexity = saturate(convexity);
+    convexity *= convexMult;
 
     float curvature = max(concavity, convexity);
 	const float fMaxCurve = fwidth(curvature) * _NormalEdgeSoftness;
