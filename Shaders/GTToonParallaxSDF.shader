@@ -2,6 +2,8 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
 {
     Properties
     {
+        [Header(##### Expirimental and Funky. Do Not Use. #####)]
+        
         [Header(Base)]
         _Color ("Main Color", Color) = (1, 1, 1, 1)
         _MainTex (" Main Texture", 2D) = "white" {}
@@ -57,8 +59,8 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .3
         _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
 
-        [Header(Far Outline Normal)]
-        _FarNormalSampleDist ("Far Normal Outline Distance", Range(0,10)) = 10
+        [Header(Far)]
+        _FarDist ("Far Distance", Range(0,10)) = 10
 
         [Header(### Shading)]
 
