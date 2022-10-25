@@ -5,7 +5,8 @@
 Texture2D _GTToonGrabTexture;
 float4 _GTToonGrabTexture_TexelSize;
 SamplerState _bilinear_clamp_Sampler;
-    
+
+Texture2D _OutlineColorTex;
 float4 _OutlineColor;
 
 float _NormalSampleMult;
@@ -264,10 +265,11 @@ inline float SampleToonOutline(float2 uv, float dist)
 	return max(depth, curvature);
 }
 
-inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alpha)
+inline void applyToonOutline(inout float3 col, float2 screenUv, float2 mainUv, float dist)
 {
-	const float outline = SampleToonOutline(uv, dist);
-	col = lerp(col, _OutlineColor, outline * alpha);
+	const float4 colorTex = _OutlineColorTex.Sample(_bilinear_clamp_Sampler, mainUv);
+	const float outline = SampleToonOutline(screenUv, dist);
+	col = lerp(col, _OutlineColor * colorTex.rgb, outline * colorTex.a);
 }
 
 inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alpha, float3 outlineColor)

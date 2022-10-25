@@ -5,13 +5,12 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         [Header(Base)]
         _Color ("Main Color", Color) = (1, 1, 1, 1)
         _MainTex ("Main Texture", 2D) = "white" {}
-        _AddTex ("Add Texture", 2D) = "white" {}
         
         [Header(### Outline)]
 
         [Header(Outline Color)]
-        _OutlineColor ("Outline Color", Color) = (0,0,0,0)
-        _OutlineColorTex ("Outline Color Texture", Color) = (0,0,0,0)
+        _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+	    _OutlineColorTex ("Outline Color Texture", 2D) = "white" {}
 
         [Header(Outline Size)]
         _LineSizeNear ("Line Size Near", Range(0, 2)) = .2
@@ -49,7 +48,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         [Header(### Shading)]
 
         [Header(MatCap)]
-        _MatCap ("MatCap", 2D) = "white" {}
+        _MatCapTex ("MatCap", 2D) = "black" {}
         _MatCapMult ("MatCap Multiply", Range(0,6)) = .5
         _MatCapAdd ("MatCap Add", Range(0,6)) = .02
         _MatCapInset ("MatCap Inset", Range(0,1)) = .1
@@ -64,12 +63,13 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.95,1.05)) = .995
         _RimMultiplyGradientMax ("Rim Darken Gradient Max", Range(.95,1.05)) = 1
     	_RimMultiplyEdgeSoftness ("Rim Darken Edge Softness", Range(0,2)) = .5
-
-        [Header(Vertex Color)]
-        _VertexColorBlend ("Vertex Color Blend", Range(0,2)) = 0
-        _VertexColorBias ("Vertex Color Bias", Range(0,2)) = 1
-
+        
         [Header(### Lighting)]
+        _LightingColor ("Add Lighting Color", Color) = (0,0,0,1)
+    	_LightingColorTex ("Add Lighting Texture", 2D) = "white" {}
+        
+        [Header(AO Vertex Color)]
+        _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
         
         [Header(Direct Light Levels)]
         _DirectBlackLevel ("DirectBlackLevel", Range(0,1)) = 0
@@ -179,18 +179,14 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             float4 frag(v2f i) : SV_Target
             {
             	const float3 normalizedWorldSpaceNormal = normalize(i.worldNormal);
-                const float2 centerUV  = i.scrPos.xy / i.scrPos.w;
-
+                const float2 screenUv  = i.scrPos.xy / i.scrPos.w;
+            	
                 float4 sample = tex2D(_MainTex, TRANSFORM_TEX(i.uv0, _MainTex)) * _Color;
                 float3 diffuse = sample.xyz;
-            	
-            	applyVertexColors(diffuse, i.color, sample.a);
-            	
-                applyLocalLighting(diffuse, normalizedWorldSpaceNormal, i.worldPosition);
-                UNITY_LIGHT_ATTENUATION(attenuation, i, normalizedWorldSpaceNormal);
-                applyWorldLighting(diffuse, normalizedWorldSpaceNormal, attenuation);
-            	
-                applyToonOutline(diffuse, centerUV, i.pos.w, sample.a);
+
+            	UNITY_LIGHT_ATTENUATION(attenuation, i, normalizedWorldSpaceNormal);
+            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color);
+                applyToonOutline(diffuse, screenUv, i.uv0, i.pos.w);
                 
                 return float4(diffuse, 1);
             }
