@@ -14,9 +14,9 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _OutlineColorTex ("Outline Color Texture", Color) = (0,0,0,0)
 
         [Header(Outline Size)]
-        _LineSizeNear ("Line Size Near", Range(0, 2)) = .1
-        _LineSize ("Line Size", Range(0, 2)) = .5
-        _NearLineSizeRange ("Near Line Size Range", Range(0, 4)) = .3
+        _LineSizeNear ("Line Size Near", Range(0, 2)) = .2
+        _LineSize ("Line Size", Range(0, 2)) = .8
+        _NearLineSizeRange ("Near Line Size Range", Range(0, 4)) = 1
 
         [Header(Depth Map)]
         _BoundingExtents ("Depth Bounding Extents", Float) = .5
