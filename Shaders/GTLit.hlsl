@@ -12,8 +12,11 @@
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
 
-sampler2D _MatCap;
-float _Matcap;
+sampler2D _LightingColorTex;
+float4 _LightingColor;
+
+sampler2D _MatCapTex;
+
 float _MatCapMult;
 float _MatCapAdd;
 float _MatCapBias;
@@ -28,6 +31,8 @@ float _RimAddMult;
 float _RimAddBias;
 float _RimAddColorBlend;
 float4 _RimAddColor;
+
+float _VertexColorBlend;
 
 float _ProbeAverage;
 
@@ -55,10 +60,10 @@ inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition)
     return ld;
 }
 
-inline void applyMatcap(inout float3 col, float2 matcapUV)
+inline void applyMatcap(inout float3 col, const float2 matcapUV, const float fileAlpha)
 {
-    float3 mc = tex2D(_MatCap, float2(lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.x ), lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.y)));
-    col.rgb = lerp(col, col * mc, _MatCapMult);
+    float3 mc = tex2D(_MatCapTex, float2(lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.x ), lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.y)));
+    col.rgb = lerp(col, col * mc, _MatCapMult * fileAlpha);
     // https://photoblogstop.com/photoshop/photoshop-blend-modes-explained
     float3 screenCol = 1 - (1 - mc) * (1 - col); // screen
     // float3 screenCol = col / (1 - mc); // color doge
@@ -79,10 +84,10 @@ inline void applyRimLighten(inout float3 col, float rimScalar)
     col = lerp(col, col + _RimAddColor, rimScalar * _RimAddColorBlend);
 }
 
-inline void applyLocalLighting(inout float3 col, const float3 normalizedWorldNormal, const float3 worldPosition)
+inline void applyLocalLighting(inout float3 col, const float3 normalizedWorldNormal, const float3 worldPosition, const float alpha)
 {
     const LitData ld = calcLitData(normalizedWorldNormal, worldPosition);
-    applyMatcap(col, ld.matcapUV);
+    applyMatcap(col, ld.matcapUV, alpha);
     applyRimLighten(col, ld.rimScalar);
     applyRimDarken(col, ld.rimScalar);
 }
@@ -198,12 +203,17 @@ inline void applyWorldLighting(inout float3 col, float3 normalizedWorldSpaceNorm
     col *= finalLight;  
 }
 
-float _VertexColorBlend;
-float _VertexColorBias;
-
-inline void applyVertexColors(inout float3 col, float3 vertexColor, float alpha)
+inline void applyAOVertexColors(inout float3 col, float3 vertexColor, float fileAlpha)
 {
     vertexColor = saturate(vertexColor);
-    vertexColor = pow(vertexColor, _VertexColorBias);
-    col = lerp(col, col * vertexColor, _VertexColorBlend * alpha);
+    col = lerp(col, col * vertexColor, fileAlpha * _VertexColorBlend);
+}
+
+inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor)
+{
+    float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
+    applyAOVertexColors(col, aoVertColor, lightColorSample.a);
+    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a);
+    applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
+    col += lightColorSample.rgb;
 }
