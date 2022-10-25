@@ -16,7 +16,7 @@ float _ConvexSampleMult;
 float _ConvexSampleBias;
 float _FarConvexSampleMult;
 
-float _FarNormalSampleDist;
+float _FarDist;
 
 float _DepthSilhouetteMultiplier;
 float _LocalEqualizeThreshold;
@@ -219,23 +219,27 @@ inline float SampleToonOutline(float2 uv, float dist)
 	float averageDepth = sd.contrastZ;
 	float concavity = pixelBlend.y;
 	float convexity = pixelBlend.z;
+
+	const float fDepth = fwidth(depth) * _DepthEdgeSoftness;
+	depth = smoothstep(_DepthGradientMin - fDepth, _DepthGradientMax + fDepth, depth);
 	
 	// I am adding contrast sample back over the as it has a wider falloff than pixelblend
-	// and can add to the softess/AA of the silhouette line. Also keeps silhouette at a distance.
-	// averageDepth *= _DepthContrastMult;
-	averageDepth = saturate(averageDepth * _DepthSilhouetteMultiplier);
+	// and can add to the softess/AA of the silhouette line.
+	// Also keeps silhouette better at a distance as the local equalized depth can produce
+	// an odd artifact at the edge.
+	// lerp 2 to 1 based on distance as up close it can create a kind 'halo' light grey around
+	// the main line.	
+	const float averageDepthMult = lerp(2, 1, saturate(dist / _FarDist));
+	averageDepth = saturate(averageDepth * averageDepthMult * _DepthSilhouetteMultiplier);
 	
 	depth = max(depth, averageDepth);
 
-	const float fDepth = fwidth(depth) * _DepthEdgeSoftness;;
-	depth = smoothstep(_DepthGradientMin - fDepth, _DepthGradientMax + fDepth, depth);
-
 	// curvatures
-    const float normalMult = lerp(_NormalSampleMult, _FarNormalSampleMult, saturate(dist / _FarNormalSampleDist));
-    concavity *= normalMult;
+    const float concaveMult = lerp(_NormalSampleMult, _FarNormalSampleMult, saturate(dist / _FarDist));
+    concavity = saturate(concavity * concaveMult);
     
-    const float convexMult = lerp(_ConvexSampleMult, _FarConvexSampleMult, saturate(dist / _FarNormalSampleDist));
-    convexity *= convexMult;
+    const float convexMult = lerp(_ConvexSampleMult, _FarConvexSampleMult, saturate(dist / _FarDist));
+    convexity = saturate(convexity * convexMult);
 
     float curvature = max(concavity, convexity);
 	const float fMaxCurve = fwidth(curvature) * _NormalEdgeSoftness;
