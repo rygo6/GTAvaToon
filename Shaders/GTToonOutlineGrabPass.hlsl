@@ -4,6 +4,9 @@ struct grabpass_appdata
 {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+    #ifdef GT_OutlineGrabPass_APPDATA
+        GT_OutlineGrabPass_APPDATA
+    #endif
 };
 
 struct grabpass_v2f
@@ -14,6 +17,9 @@ struct grabpass_v2f
     // centroid float3 viewNormal : NORMAL1; 
     // float depth: DEPTH;
     centroid float4 normal_depth : NORMAL;
+    #ifdef GT_OutlineGrabPass_V2F
+        GT_OutlineGrabPass_V2F
+    #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
@@ -37,10 +43,16 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(grabpass_v2f, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+    float3 position = v.vertex;
+
+    #ifdef GT_OutlineGrabPass_OSVERTEX
+        GT_OutlineGrabPass_OSVERTEX
+    #endif
     
-    o.pos = UnityObjectToClipPos(v.vertex);
+    o.pos = UnityObjectToClipPos(float4(position, 1.0));
     
-    const float3 worldPos = mul(unity_ObjectToWorld, v.vertex);
+    const float3 worldPos = mul(unity_ObjectToWorld, float4(position, 1.0));
     const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
     const float centerDis = distance(centerPos, _WorldSpaceCameraPos);
     const float dist = distance(worldPos, _WorldSpaceCameraPos);
