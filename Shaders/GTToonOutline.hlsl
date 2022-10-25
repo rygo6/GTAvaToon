@@ -269,3 +269,9 @@ inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alph
 	const float outline = SampleToonOutline(uv, dist);
 	col = lerp(col, _OutlineColor, outline * alpha);
 }
+
+inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alpha, float3 outlineColor)
+{
+	const float outline = SampleToonOutline(uv, dist);
+	col = lerp(col, outlineColor, outline * alpha);
+}
