@@ -88,12 +88,12 @@ inline float invLerp(float from, float to, float value)
     return saturate((value - from) / (to - from));
 }
 
-void SamplePass(out float3 samples[4], inout float minZ, inout float maxZ, float2 uv, float kernelSize)
+void SamplePass(out float3 samples[4], inout float minZ, inout float maxZ, float2 uv, float2 kernelSize)
 {
     UNITY_UNROLL
 	for (int sampleIndex = 0; sampleIndex < DIRECTIONAL_SAMPLE_COUNT; sampleIndex++)
 	{
-		const float2 sampleUv = uv + _SampleOffsets[sampleIndex] * kernelSize;
+		const float2 sampleUv = uv + (_SampleOffsets[sampleIndex] * kernelSize);
 		const float4 sample = _GTToonGrabTexture.Sample(_bilinear_clamp_Sampler, sampleUv);
 		const float2 exNormalSample = sample.xy * 2.0 - 1.0;
 		samples[sampleIndex].xy = float2(exNormalSample.x, exNormalSample.y);
@@ -196,9 +196,23 @@ inline float3 DeterminePixelBlendFactor (ToonData td)
 }
 
 // tnx https://github.com/cnlohr/shadertrixx
+inline bool IsVR() {
+	// USING_STEREO_MATRICES
+#if UNITY_SINGLE_PASS_STEREO
+	return true;
+#else
+	return false;
+#endif
+}
+
 inline bool IsInMirror()
 {
     return unity_CameraProjection[2][0] != 0.f || unity_CameraProjection[2][1] != 0.f;
+}
+
+inline bool IsInMirrorInVR()
+{
+	return IsVR() && IsInMirror();
 }
 
 inline float SampleToonOutline(float2 uv, float dist)
@@ -206,10 +220,12 @@ inline float SampleToonOutline(float2 uv, float dist)
 	// this math to equalize against FOV + Screensize is a bit eye-balled...
     const float fov = atan(1.0 / unity_CameraProjection._m11) * 1000;
     const float lineSize = lerp(_LineSizeNear, _LineSize, saturate(dist / _NearLineSizeRange));
-    const float2 kernelSizeMultiplier = lineSize * _ScreenParams.xy / fov / dist / (IsInMirror() ? 2.0 : 1.0);
+    float2 kernelSizeMultiplier = lineSize * _ScreenParams.xy / fov / dist / (IsInMirrorInVR() ? 2.0 : 1.0);
+	kernelSizeMultiplier.x *= _ScreenParams.y / _ScreenParams.x; // fix ratio!
 
-	const float2 texelSize = 1.0 / _GTToonGrabTexture_TexelSize.zw;
-    const float2 kernelSize = texelSize * kernelSizeMultiplier;
+	// 1.0/zw because y can be flipped! Yes it caused issues.
+	// https://forum.unity.com/threads/_maintex_texelsize-whats-the-meaning.110278/#post-1580744
+	const float2 kernelSize = (1.0 / _GTToonGrabTexture_TexelSize.zw) * kernelSizeMultiplier;
 	
 	const SampleData sd = SamplePassKernel(uv, kernelSize);
 	const ToonData td = CalcToonKernel(sd);
