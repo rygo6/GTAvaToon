@@ -2,7 +2,7 @@
 using UnityEditor;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
-namespace GeoTetra.GTAvaUtil
+namespace GeoTetra.GTAvaToon.Editor
 {
     public class MenuUtilites
     {

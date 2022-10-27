@@ -1,34 +1,67 @@
 Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
-{
-    Properties
+{	
+	Properties
     {
-        [Header(Base)]
-        _Color ("Main Color", Color) = (1, 1, 1, 1)
-        _MainTex ("Main Texture", 2D) = "white" {}
-        
-        [Header(### Outline)]
-
+    	[GTFoldoutHeader(Base)]
+    	
+    	[Header(Diffuse)]
+	    [GTPropertyDrawer(Diffuse color.)]
+	    _Color ("Diffuse Color", Color) = (1, 1, 1, 1)
+    	
+    	[GTPropertyDrawer(Multiply Diffuse Color by texture.)]
+        _MainTex ("Diffuse Texture", 2D) = "white" {}
+	    
+    	
+        [GTFoldoutHeader(Outline)]
+    	
         [Header(Outline Color)]
+    	[GTPropertyDrawer(RGB color and alpha of outline.)]
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+    	
+    	[GTPropertyDrawer(Multiply Outline Color by RGB color and alpha from texture.)]
 	    _OutlineColorTex ("Outline Color Texture", 2D) = "white" {}
 
         [Header(Outline Size)]
+    	[GTPropertyDrawer(Primary line size. Change this to control overall line thickness.)]
+    	_LineSize ("Line Size", Range(0, 2)) = .8
+    	
+    	[GTPropertyDrawer(Line size when your view is zero distance from the surface. Change this to make the line thinner when up close.)]
         _LineSizeNear ("Line Size Near", Range(0, 2)) = .2
-        _LineSize ("Line Size", Range(0, 2)) = .8
+    	
+    	[GTPropertyDrawer(The distance at which the line size will transition from Line Size Near to Line Size.)]
         _NearLineSizeRange ("Near Line Size Range", Range(0, 4)) = 1
 
+    	[GTFoldoutHeader(Depth Outline)]
+    	
         [Header(Depth Map)]
+    	[GTPropertyDrawer(Set to be the total extents of the avatar. Should be same for all materials on avatar.)]
         _BoundingExtents ("Depth Bounding Extents", Float) = .5
+    	
+    	[GTPropertyDrawer(Will offset the materials depth value. This can be used to force lines to be drawn between materials.)]
         _DepthOffset ("Depth Bounding Offset", Range(-.5,.5)) = 0
-    	_DepthOffsetTex ("Depth Offset Texture", Color) = (0,0,0,0)
-        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .02
-        [ToggleUI] _DepthSilhouetteMultiplier ("Depth Silhouette", Float) = 1
+    	
+    	[GTPropertyDrawer(Lower value will capture more detail from the depth but the lines will be more aliased and grainy. As you adjust pay attention to AA quality of the line in game view.)]
+        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .03
+    	
+	    [ToggleUI] 
+    	[GTPropertyDrawer(Draw the sillhouette around the avatar at a distance. Recommend to leave on as it helps minimize subtle artifacts at a distance.)]
+    	_DepthSilhouetteMultiplier ("Far Depth Silhouette", Float) = 1
 
+    	
         [Header(Depth Outline Gradient)]
-        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0
-        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.5
+    	
+    	[GTPropertyDrawer(Depth threshold to start drawing line. Lower value will make more detail but may also show artifacting.)]
+        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = .05
+    	
+    	[GTPropertyDrawer(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
+    	
+    	[GTPropertyDrawer(Utilize fwidth to apply additinal softness to line. Larger values will make it softer but will reveal block artifacts.)]
         _DepthEdgeSoftness ("Depth Outline Edge Softness", Range(0, 2)) = .25
-
+    	
+    	
+    	[GTFoldoutHeader(Normal Outline)]
+    	
         [Header(Concave Normal Outline Sampling)]
         _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
         _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
@@ -39,19 +72,26 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 
         [Header(Normal Outline Gradient)]
         _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .3
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .2
         _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
-
-        [Header(Far)]
-        _FarDist ("Far Distance", Range(0,10)) = 10
-
-        [Header(### Shading)]
+        
+    	[Header(Normal Far Distance)]
+        _FarDist ("Normal Far Distance", Range(0,10)) = 10
+    	
+        [GTFoldoutHeader(Local Lighting)]
+    	
+    	[Header(Add Lighting)]
+        _LightingColor ("Add Lighting Color", Color) = (0,0,0,1)
+    	_LightingColorTex ("Add Lighting Texture", 2D) = "white" {}
 
         [Header(MatCap)]
         _MatCapTex ("MatCap", 2D) = "black" {}
         _MatCapMult ("MatCap Multiply", Range(0,6)) = .5
         _MatCapAdd ("MatCap Add", Range(0,6)) = .02
         _MatCapInset ("MatCap Inset", Range(0,1)) = .1
+    	
+    	[Header(AO Vertex Color)]
+        _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
 
         [Header(Rim Add)]
         _RimAddMult ("Rim Multiplier", Range(0,2)) = .8
@@ -63,25 +103,23 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.95,1.05)) = .995
         _RimMultiplyGradientMax ("Rim Darken Gradient Max", Range(.95,1.05)) = 1
     	_RimMultiplyEdgeSoftness ("Rim Darken Edge Softness", Range(0,2)) = .5
+            	
+    	[GTFoldoutHeader(World Lighting)]
         
-        [Header(### Lighting)]
-        _LightingColor ("Add Lighting Color", Color) = (0,0,0,1)
-    	_LightingColorTex ("Add Lighting Texture", 2D) = "white" {}
-        
-        [Header(AO Vertex Color)]
-        _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
-        
-        [Header(Direct Light Levels)]
-        _DirectBlackLevel ("DirectBlackLevel", Range(0,1)) = 0
-        _DirectWhiteLevel ("DirectWhiteLevel", Range(0,1)) = .8
-        _DirectOutputBlackLevel ("DirectOutputBlackLevel", Range(0,1)) = .2
-        _DirectOutputWhiteLevel ("DirectOutputWhiteLevel", Range(0,1)) = 1
-        _DirectGamma ("DirectGamma", Range(0,2)) = .5        
+        [Header(Light Levels)]
+        _DirectBlackLevel ("Black Level", Range(0,1)) = 0
+        _DirectWhiteLevel ("White Level", Range(0,1)) = .8
+        _DirectOutputBlackLevel ("Output Black Level", Range(0,1)) = .2
+        _DirectOutputWhiteLevel ("Output White Level", Range(0,1)) = 1
+        _DirectGamma ("Gamma", Range(0,2)) = .5        
     	
     	[Header(Light Probes)]
     	_ProbeAverage ("Probe Average", Range(1,100)) = 1
-    }
-    Subshader
+    }	
+			
+	CustomEditor "GeoTetra.GTAvaToon.Editor.GTToonMatcapGUI"
+	
+	Subshader
     {
         Tags
         {
