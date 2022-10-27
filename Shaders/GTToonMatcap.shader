@@ -129,6 +129,8 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         Pass
         {        	
 	        HLSLPROGRAM
+            float _VRChatMirrorMode;
+            float3 _VRChatMirrorCameraPos;
 	        #pragma target 5.0
             #pragma vertex grabpass_vert
             #pragma fragment grabpass_frag
@@ -181,6 +183,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             	float3 worldPosition : POSITION1;
             	centroid float3 worldNormal : NORMAL0;
             	float4 scrPos : POSITION2;
+                float3 cameraPos : POSITION3;
 
             	UNITY_SHADOW_COORDS(7)
             	
@@ -190,6 +193,9 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
             float4 _Color;
+
+            float _VRChatMirrorMode;
+            float3 _VRChatMirrorCameraPos;
 	                    
             v2f vert(const appdata v)
             {
@@ -197,6 +203,17 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+                #if defined(USING_STEREO_MATRICES)
+                    float3 PlayerCenterCamera = ( unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1] ) / 2;
+                #else
+                    float3 PlayerCenterCamera = _WorldSpaceCameraPos.xyz;
+                #endif
+
+                if (_VRChatMirrorMode > 0)
+                {
+                    PlayerCenterCamera = _VRChatMirrorCameraPos;
+                }
             	
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
@@ -208,6 +225,8 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             	
 				o.worldPosition = mul(unity_ObjectToWorld, v.vertex);
                 o.worldNormal = UnityObjectToWorldNormal(v.normal);
+
+                o.cameraPos = PlayerCenterCamera;
 
             	UNITY_TRANSFER_LIGHTING(o, v.uv1);
             	
@@ -223,7 +242,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
                 float3 diffuse = sample.xyz;
 
             	UNITY_LIGHT_ATTENUATION(attenuation, i, normalizedWorldSpaceNormal);
-            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color);
+            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color, i.cameraPos);
                 applyToonOutline(diffuse, screenUv, i.uv0, i.pos.w);
                 
                 return float4(diffuse, 1);
