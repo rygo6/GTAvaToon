@@ -43,7 +43,7 @@ struct LitData
 };
 
 // Calc matcap uvs, then also use this for the rimscalar as its more correct than COMPUTER_VIEW_NORMAL
-inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition)
+inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition, float3 cameraPos)
 {
     // bgolus matcap https://gist.github.com/bgolus/02e37cd76568520e20219dc51653ceaa
     // yes it be better than others
@@ -84,9 +84,9 @@ inline void applyRimLighten(inout float3 col, float rimScalar)
     col = lerp(col, col + _RimAddColor, rimScalar * _RimAddColorBlend);
 }
 
-inline void applyLocalLighting(inout float3 col, const float3 normalizedWorldNormal, const float3 worldPosition, const float alpha)
+inline void applyLocalLighting(inout float3 col, const float3 normalizedWorldNormal, const float3 worldPosition, const float alpha, float3 cameraPos)
 {
-    const LitData ld = calcLitData(normalizedWorldNormal, worldPosition);
+    const LitData ld = calcLitData(normalizedWorldNormal, worldPosition, cameraPos);
     applyMatcap(col, ld.matcapUV, alpha);
     applyRimLighten(col, ld.rimScalar);
     applyRimDarken(col, ld.rimScalar);
@@ -209,11 +209,11 @@ inline void applyAOVertexColors(inout float3 col, float3 vertexColor, float file
     col = lerp(col, col * vertexColor, fileAlpha * _VertexColorBlend);
 }
 
-inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor)
+inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor, float3 cameraPos)
 {
     float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
     applyAOVertexColors(col, aoVertColor, lightColorSample.a);
-    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a);
+    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a, cameraPos);
     applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
     col += lightColorSample.rgb;
 }

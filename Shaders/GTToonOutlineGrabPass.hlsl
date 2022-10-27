@@ -32,17 +32,28 @@ inline float linearStep(float a, float b, float x)
 }
 
 // tnx https://github.com/cnlohr/shadertrixx
-bool IsInMirror()
-{
-    return unity_CameraProjection[2][0] != 0.f || unity_CameraProjection[2][1] != 0.f;
-}
+//bool IsInMirror()
+//{
+//    return unity_CameraProjection[2][0] != 0.f || unity_CameraProjection[2][1] != 0.f;
+//}
             
 grabpass_v2f grabpass_vert(const grabpass_appdata v)
 {
     grabpass_v2f o;
-    UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(grabpass_v2f, o);
+    UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+    #if defined(USING_STEREO_MATRICES)
+        float3 PlayerCenterCamera = ( unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1] ) / 2;
+    #else
+        float3 PlayerCenterCamera = _WorldSpaceCameraPos.xyz;
+    #endif
+
+    if (_VRChatMirrorMode > 0)
+    {
+        PlayerCenterCamera = _VRChatMirrorCameraPos;
+    }
 
     float3 position = v.vertex;
 
@@ -54,8 +65,8 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     
     const float3 worldPos = mul(unity_ObjectToWorld, float4(position, 1.0));
     const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
-    const float centerDis = distance(centerPos, _WorldSpaceCameraPos);
-    const float dist = distance(worldPos, _WorldSpaceCameraPos);
+    const float centerDis = distance(centerPos, PlayerCenterCamera);
+    const float dist = distance(worldPos, PlayerCenterCamera);
     const float depth = linearStep(centerDis - _BoundingExtents, centerDis + _BoundingExtents, dist) + _DepthOffset;
 
     // o.depth = depth;
