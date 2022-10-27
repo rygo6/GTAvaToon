@@ -196,32 +196,12 @@ inline float3 DeterminePixelBlendFactor (ToonData td)
 	return blendFactor;
 }
 
-// tnx https://github.com/cnlohr/shadertrixx
-inline bool IsVR() {
-	// USING_STEREO_MATRICES
-#if UNITY_SINGLE_PASS_STEREO
-	return true;
-#else
-	return false;
-#endif
-}
-
-inline bool IsInMirror()
-{
-    return unity_CameraProjection[2][0] != 0.f || unity_CameraProjection[2][1] != 0.f;
-}
-
-inline bool IsInMirrorInVR()
-{
-	return IsVR() && IsInMirror();
-}
-
 inline float SampleToonOutline(float2 uv, float dist)
 {
 	// this math to equalize against FOV + Screensize is a bit eye-balled...
     const float fov = atan(1.0 / unity_CameraProjection._m11) * 1000;
     const float lineSize = lerp(_LineSizeNear, _LineSize, saturate(dist / _NearLineSizeRange));
-    float2 kernelSizeMultiplier = lineSize * _ScreenParams.xy / fov / dist / (IsInMirrorInVR() ? 2.0 : 1.0);
+    float2 kernelSizeMultiplier = lineSize * _ScreenParams.xy / fov / dist;
 	kernelSizeMultiplier.x *= _ScreenParams.y / _ScreenParams.x; // fix ratio!
 
 	// 1.0/zw because y can be flipped! Yes it caused issues.
@@ -246,8 +226,7 @@ inline float SampleToonOutline(float2 uv, float dist)
 	// an odd artifact at the edge.
 	// lerp 2 to 1 based on distance as up close it can create a kind 'halo' light grey around
 	// the main line.	
-	const float averageDepthMult = lerp(2, 1, saturate(dist / _FarDist));
-	averageDepth = saturate(averageDepth * averageDepthMult * _DepthSilhouetteMultiplier);
+	averageDepth = saturate(averageDepth * 2 * _DepthSilhouetteMultiplier);
 	
 	depth = max(depth, averageDepth);
 
