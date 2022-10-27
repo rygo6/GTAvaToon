@@ -38,13 +38,13 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         [Header(Depth Map)]
         _BoundingExtents ("Depth Bounding Extents", Float) = .5
         _DepthOffset ("Depth Bounding Offset", Range(-.5,.5)) = 0
-    	_DepthOffsetTex ("Depth Offset Texture", Color) = (0,0,0,0)
-        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .02
+//    	_DepthOffsetTex ("Depth Offset Texture", Color) = (0,0,0,0)
+        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .03
         [ToggleUI] _DepthSilhouetteMultiplier ("Depth Silhouette", Float) = 1
 
         [Header(Depth Outline Gradient)]
-        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0
-        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.5
+        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0.05
+        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
         _DepthEdgeSoftness ("Depth Outline Edge Softness", Range(0, 2)) = .25
 
         [Header(Concave Normal Outline Sampling)]
@@ -57,7 +57,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
 
         [Header(Normal Outline Gradient)]
         _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .3
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .2
         _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
 
         [Header(Far)]
