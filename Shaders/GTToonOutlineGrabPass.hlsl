@@ -7,6 +7,7 @@ struct grabpass_appdata
     #ifdef GT_OutlineGrabPass_APPDATA
         GT_OutlineGrabPass_APPDATA
     #endif
+    UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct grabpass_v2f
