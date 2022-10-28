@@ -72,10 +72,10 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         _MatCapInset ("MatCap Inset", Range(0,1)) = .1
 
         [Header(Rim Add)]
-        _RimAddMult ("Rim Multiplier", Range(0,2)) = .8
-        _RimAddBias ("Rim Bias", Range(0,20)) = 10
+    	_RimAddGradientMin ("Rim Add Gradient Min", Range(.5,1.5)) = .8
+        _RimAddGradientMax ("Rim Add Gradient Max", Range(.5,1.5)) = 1.5
         _RimAddColor ("Rim Add Color", Color) = (1, 1, 1, 1)
-        _RimAddColorBlend ("Rim Add Final Color Blend", Range(0,1)) = .2
+        _RimAddColorBlend ("Rim Add Final Color Blend", Range(0,1)) = .05
 
     	[Header(Rim Darken)]
         _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.8,1.2)) = .995

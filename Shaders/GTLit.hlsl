@@ -23,6 +23,9 @@ float _MatCapBias;
 float _MatCapIntensity;
 float _MatCapInset;
 
+float _RimAddGradientMin;
+float _RimAddGradientMax;
+
 float _RimMultiplyGradientMin;
 float _RimMultiplyGradientMax;
 float _RimMultiplyEdgeSoftness;
@@ -79,8 +82,9 @@ inline void applyRimDarken(inout float3 col, float rimScalar)
 
 inline void applyRimLighten(inout float3 col, float rimScalar)
 {
-    rimScalar *= _RimAddMult;
-    rimScalar = pow(rimScalar, _RimAddBias);
+    // rimScalar *= _RimAddMult;
+    // rimScalar = pow(rimScalar, _RimAddBias);
+    rimScalar = smoothstep(_RimAddGradientMin, _RimAddGradientMax, rimScalar);
     col = lerp(col, col + _RimAddColor, rimScalar * _RimAddColorBlend);
 }
 

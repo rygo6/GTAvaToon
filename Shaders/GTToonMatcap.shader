@@ -2,119 +2,177 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 {	
 	Properties
     {
-    	[GTFoldoutHeader(Base)]
+    	[LargeHeader(Base)]
     	
     	[Header(Diffuse)]
-	    [GTPropertyDrawer(Diffuse color.)]
+	    [Tooltip(Diffuse color.)]
 	    _Color ("Diffuse Color", Color) = (1, 1, 1, 1)
     	
-    	[GTPropertyDrawer(Multiply Diffuse Color by texture.)]
+    	[Tooltip(Multiply Diffuse Color by texture.)]
         _MainTex ("Diffuse Texture", 2D) = "white" {}
 	    
     	
-        [GTFoldoutHeader(Outline)]
+        [LargeHeader(Outline)]
     	
         [Header(Outline Color)]
-    	[GTPropertyDrawer(RGB color and alpha of outline.)]
+    	[Tooltip(RGB color and alpha of outline.)]
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
     	
-    	[GTPropertyDrawer(Multiply Outline Color by RGB color and alpha from texture.)]
+    	[Tooltip(Multiply Outline Color by RGB color and alpha from texture.)]
 	    _OutlineColorTex ("Outline Color Texture", 2D) = "white" {}
 
         [Header(Outline Size)]
-    	[GTPropertyDrawer(Primary line size. Change this to control overall line thickness.)]
+    	[Tooltip(Primary line size. Change this to control overall line thickness.)]
     	_LineSize ("Line Size", Range(0, 2)) = .8
     	
-    	[GTPropertyDrawer(Line size when your view is zero distance from the surface. Change this to make the line thinner when up close.)]
+    	[Tooltip(Line size when your view is zero distance from the surface. Change this to make the line thinner when up close.)]
         _LineSizeNear ("Line Size Near", Range(0, 2)) = .2
     	
-    	[GTPropertyDrawer(The distance at which the line size will transition from Line Size Near to Line Size.)]
+    	[Tooltip(The distance at which the line size will transition from Line Size Near to Line Size.)]
         _NearLineSizeRange ("Near Line Size Range", Range(0, 4)) = 1
 
-    	[GTFoldoutHeader(Depth Outline)]
+    	
+    	[LargeHeader(Depth Outline)]
     	
         [Header(Depth Map)]
-    	[GTPropertyDrawer(Set to be the total extents of the avatar. Should be same for all materials on avatar.)]
+    	[Tooltip(Set to be the total extents of the avatar. Should be same for all materials on avatar.)]
         _BoundingExtents ("Depth Bounding Extents", Float) = .5
     	
-    	[GTPropertyDrawer(Will offset the materials depth value. This can be used to force lines to be drawn between materials.)]
+    	[Tooltip(Will offset the materials depth value. This can be used to force lines to be drawn between materials.)]
         _DepthOffset ("Depth Bounding Offset", Range(-.5,.5)) = 0
     	
-    	[GTPropertyDrawer(Lower value will capture more detail from the depth but the lines will be more aliased and grainy. As you adjust pay attention to AA quality of the line in game view.)]
+    	[Tooltip(Lower value will capture more detail from the depth but the lines will be more aliased and grainy. As you adjust pay attention to AA quality of the line in game view.)]
         _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .03
-    	
-	    [ToggleUI] 
-    	[GTPropertyDrawer(Draw the sillhouette around the avatar at a distance. Recommend to leave on as it helps minimize subtle artifacts at a distance.)]
+        
+    	// eh this doesn't draw currently how to fix?
+    	[Tooltip(Draw the sillhouette around the avatar at a distance. Recommend to leave on as it helps minimize subtle artifacts at a distance.)]
+    	[ToggleUI] 
     	_DepthSilhouetteMultiplier ("Far Depth Silhouette", Float) = 1
 
     	
         [Header(Depth Outline Gradient)]
     	
-    	[GTPropertyDrawer(Depth threshold to start drawing line. Lower value will make more detail but may also show artifacting.)]
-        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = .05
+    	[Tooltip(Depth threshold to start drawing line. Lower value will make more detail.)]
+        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0
     	
-    	[GTPropertyDrawer(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+    	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
         _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
     	
-    	[GTPropertyDrawer(Utilize fwidth to apply additinal softness to line. Larger values will make it softer but will reveal block artifacts.)]
+    	[Tooltip(Utilize fwidth to apply additinal softness to line. Larger values will make it softer but will reveal block artifacts.)]
         _DepthEdgeSoftness ("Depth Outline Edge Softness", Range(0, 2)) = .25
     	
     	
-    	[GTFoldoutHeader(Normal Outline)]
+    	[LargeHeader(Normal Outline)]
+    	
+    	[Header(Normal Outline Gradient)]
+    	
+    	[Tooltip(Depth threshold to start drawing line. Lower value will make more detail.)]
+        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
+    	
+    	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .2
+    	
+    	[Tooltip(Utilize fwidth to apply additinal softness to line. Larger values will make it softer but will reveal block artifacts.)]
+        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
     	
         [Header(Concave Normal Outline Sampling)]
+    	
+    	[Tooltip(Line multplier for concave surface details. Should be kept at 1 while using Normal Gradient Min Max to adjust line details.)]
         _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
+    	
+    	[Tooltip(Line multplier for concave surface details at a far distance. Should be kept at 10 while using Normal Gradient Min Max to adjust line details.)]
         _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
 
         [Header(Convex Normal Outline Sampling)]
+    	
+    	[Tooltip(Line multplier for convex surface details. Should be kept at 1 while using Normal Gradient Min Max to adjust line details.)]
         _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = 0
+    	
+    	[Tooltip(Line multplier for convex surface details at a far distance. Should be kept at 10 while using Normal Gradient Min Max to adjust line details.)]
         _FarConvexSampleMult ("Far Convex Outline Multiplier", Range(0,10)) = 0
-
-        [Header(Normal Outline Gradient)]
-        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .2
-        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
-        
+                
     	[Header(Normal Far Distance)]
+    	[Tooltip(The distance at which the Concave and Convex Outline Sampling Multipliers tranistion to the Far Concave and Convex Outline Sampling Multipliers.)]
         _FarDist ("Normal Far Distance", Range(0,10)) = 10
     	
-        [GTFoldoutHeader(Local Lighting)]
+    	
+        [LargeHeader(Local Lighting)]
     	
     	[Header(Add Lighting)]
+    	
+    	[Tooltip(Add color to final lighting calculations. Alpha controls the VertexAO alpha and Matcap alpha.)]
         _LightingColor ("Add Lighting Color", Color) = (0,0,0,1)
+    	
+    	[Tooltip(Multiply Add Lighting Color by RGB color and alpha from texture.)]
     	_LightingColorTex ("Add Lighting Texture", 2D) = "white" {}
-
+        
         [Header(MatCap)]
+    	
+    	[Tooltip(MatCap texture. Should use something otherwise it may look odd.)]
         _MatCapTex ("MatCap", 2D) = "black" {}
+    	
+    	[Tooltip(How much to multiply the MatCap with the lighting.)]
         _MatCapMult ("MatCap Multiply", Range(0,6)) = .5
+    	
+    	[Tooltip(How much to add the MatCap to the lighting.)]
         _MatCapAdd ("MatCap Add", Range(0,6)) = .02
+    	
+    	[Tooltip(Inset edges of MatCap to get rid of artifacts at edge of MatCap.)]
         _MatCapInset ("MatCap Inset", Range(0,1)) = .1
     	
     	[Header(AO Vertex Color)]
+    	
+    	[Tooltip(Amount to multiply the AO baked into vertices.)]
         _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
-
-        [Header(Rim Add)]
-        _RimAddMult ("Rim Multiplier", Range(0,2)) = .8
-        _RimAddBias ("Rim Bias", Range(0,20)) = 10
-        _RimAddColor ("Rim Add Color", Color) = (1, 1, 1, 1)
-        _RimAddColorBlend ("Rim Add Final Color Blend", Range(0,1)) = .2
+        
+        [Header(Rim Light)]
+    	
+    	[Tooltip(Threshold to start drawing rim light.)]
+    	_RimAddGradientMin ("Rim Light Gradient Min", Range(.5,1.5)) = .8
+    	
+    	[Tooltip(Threshold by which the rim light will fade out.)]
+        _RimAddGradientMax ("Rim Light Gradient Max", Range(.5,1.5)) = 1.5
+    	
+    	[Tooltip(Rim light color.)]
+        _RimAddColor ("Rim Light Color", Color) = (1, 1, 1, 1)
+    	
+    	[Tooltip(Final rim light blend value.)]
+        _RimAddColorBlend ("Rim Light Blend", Range(0,1)) = .05
 
     	[Header(Rim Darken)]
+    	
+    	[Tooltip(Threshold to start drawing rim darken.)]
         _RimMultiplyGradientMin ("Rim Darken Gradient Min", Range(.95,1.05)) = .995
+    	
+    	[Tooltip(Threshold by which the rim darken will fade out.)]
         _RimMultiplyGradientMax ("Rim Darken Gradient Max", Range(.95,1.05)) = 1
+    	
+    	[Tooltip(Utilize fwidth to apply additinal softness to rim darkening. Larger values will make it softer but will reveal block artifacts.)]
     	_RimMultiplyEdgeSoftness ("Rim Darken Edge Softness", Range(0,2)) = .5
-            	
-    	[GTFoldoutHeader(World Lighting)]
+            	    	
+    	[LargeHeader(World Lighting)]
         
         [Header(Light Levels)]
-        _DirectBlackLevel ("Black Level", Range(0,1)) = 0
-        _DirectWhiteLevel ("White Level", Range(0,1)) = .8
-        _DirectOutputBlackLevel ("Output Black Level", Range(0,1)) = .2
-        _DirectOutputWhiteLevel ("Output White Level", Range(0,1)) = 1
-        _DirectGamma ("Gamma", Range(0,2)) = .5        
     	
+    	[Tooltip(Clip black level from world lighting.)]
+        _DirectBlackLevel ("Black Level", Range(0,1)) = 0
+    	
+    	[Tooltip(Clip white levels from world lighting.)]
+        _DirectWhiteLevel ("White Level", Range(0,1)) = .8
+    	
+    	[Tooltip(Compress black levels from world lighting upward.)]
+        _DirectOutputBlackLevel ("Output Black Level", Range(0,1)) = .2
+    	
+    	[Tooltip(Compress white levels from world lighting downwards.)]
+        _DirectOutputWhiteLevel ("Output White Level", Range(0,1)) = 1
+    	
+    	[Tooltip(Gamma of world lighting.)]
+        _DirectGamma ("Gamma", Range(0,2)) = .5        
+        
     	[Header(Light Probes)]
-    	_ProbeAverage ("Probe Average", Range(1,100)) = 1
+    	
+    	[Tooltip(Average light probe values.)]
+    	_ProbeAverage ("Probe Average", Range(1,100)) = 50
     }	
 			
 	CustomEditor "GeoTetra.GTAvaToon.Editor.GTToonMatcapGUI"
