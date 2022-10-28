@@ -24,12 +24,12 @@ namespace GeoTetra.GTAvaToon.Editor
         }
     }
     
-    public class GTPropertyDrawer : MaterialPropertyDrawer
+    public class TooltipDrawer : MaterialPropertyDrawer
     {
         readonly string m_Tooltip;
         static readonly MethodInfo m_InternalDefaultMethod;
         
-        static GTPropertyDrawer()
+        static TooltipDrawer()
         {
             // yes really, otherwise you must duplicate so much code
             var methods = typeof(MaterialEditor).GetMethods(
@@ -42,7 +42,7 @@ namespace GeoTetra.GTAvaToon.Editor
                 StringComparison.InvariantCulture));
         }
     
-        public GTPropertyDrawer(string tooltip) => m_Tooltip = tooltip;
+        public TooltipDrawer(string tooltip) => m_Tooltip = tooltip;
         
         public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
         {
@@ -51,9 +51,6 @@ namespace GeoTetra.GTAvaToon.Editor
 
         public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
         {
-            if (!GUI.enabled)
-                return;
-            
             position.y += 1;
             position.height = EditorGUIUtility.singleLineHeight;
             GUI.Label(position, new GUIContent(String.Empty, m_Tooltip));
@@ -61,19 +58,19 @@ namespace GeoTetra.GTAvaToon.Editor
         }
     }
 
-    public class MaterialGTFoldoutHeaderDecorator : MaterialPropertyDrawer
+    public class MaterialLargeHeaderDecorator : MaterialPropertyDrawer
     {
         readonly string m_Header;
         static readonly GUIStyle m_GUIStyle;
         bool m_FoldoutEnable = true;
 
-        static MaterialGTFoldoutHeaderDecorator()
+        static MaterialLargeHeaderDecorator()
         {
-            m_GUIStyle = new GUIStyle(EditorStyles.foldoutHeader);
+            m_GUIStyle = new GUIStyle(EditorStyles.label);
             m_GUIStyle.fontSize += 2;
         }
 
-        public MaterialGTFoldoutHeaderDecorator(string header) => m_Header = header;
+        public MaterialLargeHeaderDecorator(string header) => m_Header = header;
 
         public override float GetPropertyHeight(
             MaterialProperty prop,
@@ -90,14 +87,10 @@ namespace GeoTetra.GTAvaToon.Editor
             MaterialEditor editor)
         {
             EditorGUI.indentLevel = 0;
-            GUI.enabled = true;
-            EditorGUI.EndFoldoutHeaderGroup();
             
-            position.y += 8f;
-            position = EditorGUI.IndentedRect(position);
-
-            m_FoldoutEnable = EditorGUI.BeginFoldoutHeaderGroup(position, m_FoldoutEnable, m_Header);
-            GUI.enabled = m_FoldoutEnable;
+            GUI.Box(position, string.Empty);
+            EditorGUI.DropShadowLabel(position, m_Header, m_GUIStyle);
+            
             EditorGUI.indentLevel = 1;
         }
     }
