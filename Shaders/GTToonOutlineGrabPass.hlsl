@@ -58,13 +58,20 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
 
     float3 position = v.vertex;
 
+    // modify vertex positions in object space using this define
     #ifdef GT_OutlineGrabPass_OSVERTEX
         GT_OutlineGrabPass_OSVERTEX
     #endif
     
-    o.pos = UnityObjectToClipPos(float4(position, 1.0));
-    
-    const float3 worldPos = mul(unity_ObjectToWorld, float4(position, 1.0));
+    float3 worldPos = mul(unity_ObjectToWorld, float4(position, 1.0));
+
+    // modify vertex positions in world space using this define
+    #ifdef GT_OutlineGrabPass_WSVERTEX
+        GT_OutlineGrabPass_WSVERTEX
+    #endif
+
+    o.pos = UnityWorldToClipPos(worldPos);
+
     const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
     const float centerDis = distance(centerPos, PlayerCenterCamera);
     const float dist = distance(worldPos, PlayerCenterCamera);
