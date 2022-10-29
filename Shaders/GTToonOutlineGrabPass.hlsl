@@ -72,7 +72,7 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
 
     o.pos = UnityWorldToClipPos(worldPos);
 
-    const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
+    const float3 centerPos = unity_ObjectToWorld[3].xyz; // gets the object space origin in world space directly from the transform
     const float centerDis = distance(centerPos, PlayerCenterCamera);
     const float dist = distance(worldPos, PlayerCenterCamera);
     const float depth = linearStep(centerDis - _BoundingExtents, centerDis + _BoundingExtents, dist) + _DepthOffset;

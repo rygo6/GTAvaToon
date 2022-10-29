@@ -6,32 +6,39 @@ Texture2D _GTToonGrabTexture;
 float4 _GTToonGrabTexture_TexelSize;
 SamplerState _bilinear_clamp_Sampler;
 
-Texture2D _OutlineColorTex;
+// Outline Color
 float4 _OutlineColor;
+Texture2D _OutlineColorTex;
 
-float _NormalSampleMult;
-float _NormalSampleBias;
-float _FarNormalSampleMult;
+// Outline Size
+float _LineSize;
+float _LineSizeNear;
+float _NearLineSizeRange;
 
-float _ConvexSampleMult;
-float _ConvexSampleBias;
-float _FarConvexSampleMult;
-
-float _FarDist;
-
-float _DepthSilhouetteMultiplier;
+// Depth Outline
 float _LocalEqualizeThreshold;
+float _DepthSilhouetteMultiplier;
+
+// Depth Outline Gradient
 float _DepthGradientMin;
 float _DepthGradientMax;
 float _DepthEdgeSoftness;
 
-float _LineSizeNear;
-float _LineSize;
-float _NearLineSizeRange;
-
-float _NormalEdgeSoftness;
+// Normal Outline Gradient
 float _NormalGradientMin;
 float _NormalGradientMax;
+float _NormalEdgeSoftness;
+
+// Concave Normal Outline Sampling
+float _NormalSampleMult;
+float _FarNormalSampleMult;
+
+// Convex Normal Outline Sampling
+float _ConvexSampleMult;
+float _FarConvexSampleMult;
+
+// Normal Far Distance
+float _FarDist;
 
 // N E S W
 #define DIRECTIONAL_SAMPLE_COUNT 4
