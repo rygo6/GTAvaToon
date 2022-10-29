@@ -13,7 +13,7 @@ struct shadow_v2f
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-shadow_v2f shaddow_vert(shadow_appdata v)
+shadow_v2f shadow_vert(shadow_appdata v)
 {
     shadow_v2f o;
     UNITY_SETUP_INSTANCE_ID(v);

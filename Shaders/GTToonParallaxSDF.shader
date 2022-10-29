@@ -271,7 +271,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         Pass {
             Tags {"LightMode" = "ShadowCaster"}
             HLSLPROGRAM
-            #pragma vertex shaddow_vert
+            #pragma vertex shadow_vert
             #pragma fragment shadow_frag
             #pragma multi_compile_shadowcaster
             #include "GTShadow.hlsl"
