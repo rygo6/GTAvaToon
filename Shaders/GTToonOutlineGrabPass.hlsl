@@ -41,8 +41,8 @@ inline float linearStep(float a, float b, float x)
 grabpass_v2f grabpass_vert(const grabpass_appdata v)
 {
     grabpass_v2f o;
-    UNITY_INITIALIZE_OUTPUT(grabpass_v2f, o);
     UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(grabpass_v2f, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     #if defined(USING_STEREO_MATRICES)
