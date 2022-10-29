@@ -244,6 +244,7 @@ inline float SampleToonOutline(float2 uv, float dist)
 	return max(depth, curvature);
 }
 
+// Standard overload where outline color and alpha is sampled from texture.
 inline void applyToonOutline(inout float3 col, float2 screenUv, float2 mainUv, float dist)
 {
 	const float4 colorTex = _OutlineColorTex.Sample(_bilinear_clamp_Sampler, mainUv);
@@ -251,6 +252,7 @@ inline void applyToonOutline(inout float3 col, float2 screenUv, float2 mainUv, f
 	col = lerp(col, _OutlineColor * colorTex.rgb, outline * colorTex.a);
 }
 
+// Alternative overload not used internally for situations where outline color and alpha is supplied not from a texture.
 inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alpha, float3 outlineColor)
 {
 	const float outline = SampleToonOutline(uv, dist);

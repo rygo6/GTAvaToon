@@ -50,7 +50,7 @@ inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition, f
 {
     // bgolus matcap https://gist.github.com/bgolus/02e37cd76568520e20219dc51653ceaa
     // yes it be better than others
-    const float3 worldSpaceViewDir = normalize(worldPosition - _WorldSpaceCameraPos.xyz);
+    const float3 worldSpaceViewDir = normalize(worldPosition - cameraPos);
     float3 up = mul((float3x3)UNITY_MATRIX_I_V, float3(0,1,0));
     const float3 right = normalize(cross(up, worldSpaceViewDir));
     up = cross(worldSpaceViewDir, right);
@@ -213,11 +213,22 @@ inline void applyAOVertexColors(inout float3 col, float3 vertexColor, float file
     col = lerp(col, col * vertexColor, fileAlpha * _VertexColorBlend);
 }
 
+// Overload for when cameraPos is supplied
 inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor, float3 cameraPos)
 {
     float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
     applyAOVertexColors(col, aoVertColor, lightColorSample.a);
     applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a, cameraPos);
+    applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
+    col += lightColorSample.rgb;
+}
+
+// Overload for when cameraPos is ommitted
+inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor)
+{
+    float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
+    applyAOVertexColors(col, aoVertColor, lightColorSample.a);
+    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a, _WorldSpaceCameraPos.xyz);
     applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
     col += lightColorSample.rgb;
 }
