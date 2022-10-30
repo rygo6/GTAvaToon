@@ -1,3 +1,22 @@
+// Add the following pass to the end of your shader for proper shadows.
+
+/*
+        Pass {
+            Tags {"LightMode" = "ShadowCaster"}
+            HLSLPROGRAM
+            #pragma vertex shadow_vert
+            #pragma fragment shadow_frag
+            #pragma multi_compile_shadowcaster
+            #include "VRChatShadow.cginc"
+            ENDHLSL
+        }
+*/
+
+// Unlicensed: https://unlicense.org/
+
+#ifndef VRCHAT_SHADOW_INCLUDED
+#define VRCHAT_SHADOW_INCLUDED
+
 #include "UnityCG.cginc"
 
 struct shadow_appdata
@@ -27,3 +46,5 @@ float4 shadow_frag(shadow_v2f i) : SV_Target
 {
     return 0;
 }
+
+#endif

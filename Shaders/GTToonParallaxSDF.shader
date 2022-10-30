@@ -111,12 +111,11 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         Pass
         {
             HLSLPROGRAM
-            float _VRChatMirrorMode;
-            float3 _VRChatMirrorCameraPos;
-            #include "GTToonOutlineGrabPass.hlsl"
-            #pragma target 5.0
+	        #pragma target 5.0
             #pragma vertex grabpass_vert
             #pragma fragment grabpass_frag
+	        #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED	        
+	        #include "GTToonOutlineGrabPass.hlsl"
             ENDHLSL
         }
 
@@ -138,8 +137,9 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             #pragma fragment frag
             #pragma multi_compile_fwdbase
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED
-
+                        
             #include "UnityCG.cginc"
+            #include "VRChatCG.cginc"
             #include "AutoLight.cginc"
             #include "GTToonOutline.hlsl"
             #include "GTLit.hlsl"
@@ -171,8 +171,6 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
                 centroid float3 worldTangent : NORMAL1;
                 centroid float3 worldBinormal : NORMAL2;
 
-                float3 cameraPos : POSITION3;
-
                 UNITY_SHADOW_COORDS(9)
                 
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -196,27 +194,13 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             float4 _SDFColor2;
             float _SDF2Threshold;
             float _ParallaxHeight;
-
-            float _VRChatMirrorMode;
-            float3 _VRChatMirrorCameraPos;
-
+            
             v2f vert(const appdata v)
             {
                 v2f o;
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-                #if defined(USING_STEREO_MATRICES)
-                    float3 PlayerCenterCamera = ( unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1] ) / 2;
-                #else
-                    float3 PlayerCenterCamera = _WorldSpaceCameraPos.xyz;
-                #endif
-
-                if (_VRChatMirrorMode > 0)
-                {
-                    PlayerCenterCamera = _VRChatMirrorCameraPos;
-                }
 
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
@@ -230,8 +214,6 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
                 o.worldNormal = UnityObjectToWorldNormal(v.normal);
                 o.worldTangent = UnityObjectToWorldDir(v.tangent);
                 o.worldBinormal = cross(o.worldNormal, o.worldTangent) * (v.tangent.w * unity_WorldTransformParams.w);
-
-                o.cameraPos = PlayerCenterCamera;
                 
                 UNITY_TRANSFER_LIGHTING(o, v.uv1);
 
@@ -260,7 +242,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
                 layerParallaxes(diffuse, _SDF2, _SDF2Threshold, i.uv1, _SDFColor0, _SDFColor1, _SDFColor2, _ParallaxHeight, tangentViewDir);
 
                 UNITY_LIGHT_ATTENUATION(attenuation, i, normalizedWorldSpaceNormal);
-            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color, i.cameraPos);
+            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color);
                 applyToonOutline(diffuse, screenUv, i.uv0, i.pos.w);
                 
                 return float4(diffuse, 1);
@@ -274,7 +256,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             #pragma vertex shadow_vert
             #pragma fragment shadow_frag
             #pragma multi_compile_shadowcaster
-            #include "GTShadow.hlsl"
+            #include "VRChatShadow.cginc"
             ENDHLSL
         }
     }

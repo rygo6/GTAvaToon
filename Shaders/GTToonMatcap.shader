@@ -186,12 +186,11 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 
         Pass
         {        	
-	        HLSLPROGRAM
-            float _VRChatMirrorMode;
-            float3 _VRChatMirrorCameraPos;
+	        HLSLPROGRAM	        
 	        #pragma target 5.0
             #pragma vertex grabpass_vert
             #pragma fragment grabpass_frag
+	        #pragma skip_variants DYNAMICLIGHTMAP_ON LIGHTMAP_ON LIGHTMAP_SHADOW_MIXING DIRLIGHTMAP_COMBINED
 	        #include "GTToonOutlineGrabPass.hlsl"
             ENDHLSL
         }
@@ -208,14 +207,15 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
                 "LightMode" = "ForwardBase"
             }
         	
-	        HLSLPROGRAM	        
+	        HLSLPROGRAM
             #pragma target 5.0
             #pragma vertex vert
             #pragma fragment frag
 	        #pragma multi_compile_fwdbase
-	        #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED
-
+	        #pragma skip_variants DYNAMICLIGHTMAP_ON LIGHTMAP_ON LIGHTMAP_SHADOW_MIXING DIRLIGHTMAP_COMBINED
+	        
 	        #include "UnityCG.cginc"
+	        #include "VRChatCG.cginc"
 	        #include "AutoLight.cginc"
 	        #include "GTToonOutline.hlsl"
 	        #include "GTLit.hlsl"
@@ -235,13 +235,12 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             struct v2f
             {
                 float4 pos : POSITION0;
+            	float3 worldPosition : POSITION1;
+            	float4 scrPos : POSITION2;
                 float2 uv0 : TEXCOORD0;
                 float2 uv1 : TEXCOORD1;
                 float4 color : COLOR0;
-            	float3 worldPosition : POSITION1;
             	centroid float3 worldNormal : NORMAL0;
-            	float4 scrPos : POSITION2;
-                float3 cameraPos : POSITION3;
 
             	UNITY_SHADOW_COORDS(7)
             	
@@ -251,27 +250,13 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
             float4 _Color;
-
-            float _VRChatMirrorMode;
-            float3 _VRChatMirrorCameraPos;
-	                    
+	        	                    
             v2f vert(const appdata v)
             {
                 v2f o;
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-                #if defined(USING_STEREO_MATRICES)
-                    float3 PlayerCenterCamera = ( unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1] ) / 2;
-                #else
-                    float3 PlayerCenterCamera = _WorldSpaceCameraPos.xyz;
-                #endif
-
-                if (_VRChatMirrorMode > 0)
-                {
-                    PlayerCenterCamera = _VRChatMirrorCameraPos;
-                }
             	
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
@@ -283,8 +268,6 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             	
 				o.worldPosition = mul(unity_ObjectToWorld, v.vertex);
                 o.worldNormal = UnityObjectToWorldNormal(v.normal);
-
-                o.cameraPos = PlayerCenterCamera;
 
             	UNITY_TRANSFER_LIGHTING(o, v.uv1);
             	
@@ -300,7 +283,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
                 float3 diffuse = sample.xyz;
 
             	UNITY_LIGHT_ATTENUATION(attenuation, i, normalizedWorldSpaceNormal);
-            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color, i.cameraPos);
+            	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color);
                 applyToonOutline(diffuse, screenUv, i.uv0, i.pos.w);
                 
                 return float4(diffuse, 1);
@@ -308,14 +291,14 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             ENDHLSL
         }
 
-        Pass {
-            Tags {"LightMode" = "ShadowCaster"}
-            HLSLPROGRAM
-            #pragma vertex shadow_vert
-            #pragma fragment shadow_frag
-            #pragma multi_compile_shadowcaster
-            #include "GTShadow.hlsl"
-            ENDHLSL
-        }
+		Pass {
+		    Tags {"LightMode" = "ShadowCaster"}
+		    HLSLPROGRAM
+		    #pragma vertex shadow_vert
+		    #pragma fragment shadow_frag
+		    #pragma multi_compile_shadowcaster
+		    #include "VRChatShadow.cginc"
+		    ENDHLSL
+		}
     }
 }

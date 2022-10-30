@@ -1,3 +1,6 @@
+#ifndef GT_PARALLAX_INCLUDED
+#define GT_PARALLAX_INCLUDED
+
 #include "UnityCG.cginc"
 
 //https://gist.github.com/Float3/00b7192b92384532df276cb7e5c7b327
@@ -61,3 +64,5 @@ inline void layerParallaxes(inout float3 diffuse, sampler2D sdfTex, float sdfThr
         diffuse = lerp(diffuse, stepColor, smoothstep(sdfThreshold - finalFd2, sdfThreshold + finalFd2, finalSdf2) * color2.a);
     }
 }
+
+#endif

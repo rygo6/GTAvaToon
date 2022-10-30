@@ -1,3 +1,6 @@
+#ifndef GT_TOON_OUTLINE_INCLUDED
+#define GT_TOON_OUTLINE_INCLUDED
+
 #include "UnityCG.cginc"
 
 #define RAD2DEG (180.0 / UNITY_PI);
@@ -251,17 +254,18 @@ inline float SampleToonOutline(float2 uv, float dist)
 	return max(depth, curvature);
 }
 
+// Alternative overload not used internally for situations where outline color and alpha is supplied not from a texture.
+inline void applyToonOutline(inout float3 col, float2 screenUv, float4 outlineColor, float dist)
+{
+	const float outline = SampleToonOutline(screenUv, dist);
+	col = lerp(col, outlineColor.rgb, outline * outlineColor.a);
+}
+
 // Standard overload where outline color and alpha is sampled from texture.
 inline void applyToonOutline(inout float3 col, float2 screenUv, float2 mainUv, float dist)
 {
-	const float4 colorTex = _OutlineColorTex.Sample(_bilinear_clamp_Sampler, mainUv);
-	const float outline = SampleToonOutline(screenUv, dist);
-	col = lerp(col, _OutlineColor * colorTex.rgb, outline * colorTex.a);
+	const float4 outlineColor = _OutlineColorTex.Sample(_bilinear_clamp_Sampler, mainUv) * _OutlineColor;
+	applyToonOutline(col, screenUv, outlineColor, dist);
 }
 
-// Alternative overload not used internally for situations where outline color and alpha is supplied not from a texture.
-inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alpha, float3 outlineColor)
-{
-	const float outline = SampleToonOutline(uv, dist);
-	col = lerp(col, outlineColor, outline * alpha);
-}
+#endif

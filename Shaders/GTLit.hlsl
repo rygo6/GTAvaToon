@@ -1,3 +1,6 @@
+#ifndef GT_LIT_INCLUDED
+#define GT_LIT_INCLUDED
+
 // Purpose of this lighting scheme is to:
 // 1. Enable a definition of a "Local" lighting. This is lighting which ignores the world, and is explicitly use defined.
 // 2. Blend that Local lighting with a somewhat averaged "World" lighting, so the avatar's lighting is not completely
@@ -10,6 +13,7 @@
 // baked to spherical harmonics or a worl with indirect SH + Direct Realtime Light
 
 #include "UnityCG.cginc"
+#include "VRChatCG.cginc"
 #include "Lighting.cginc"
 
 sampler2D _LightingColorTex;
@@ -46,11 +50,11 @@ struct LitData
 };
 
 // Calc matcap uvs, then also use this for the rimscalar as its more correct than COMPUTER_VIEW_NORMAL
-inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition, float3 cameraPos)
+inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition)
 {
     // bgolus matcap https://gist.github.com/bgolus/02e37cd76568520e20219dc51653ceaa
     // yes it be better than others
-    const float3 worldSpaceViewDir = normalize(worldPosition - cameraPos);
+    const float3 worldSpaceViewDir = normalize(worldPosition - VRC_CENTER_CAMERA_POS);
     float3 up = mul((float3x3)UNITY_MATRIX_I_V, float3(0,1,0));
     const float3 right = normalize(cross(up, worldSpaceViewDir));
     up = cross(worldSpaceViewDir, right);
@@ -82,15 +86,13 @@ inline void applyRimDarken(inout float3 col, float rimScalar)
 
 inline void applyRimLighten(inout float3 col, float rimScalar)
 {
-    // rimScalar *= _RimAddMult;
-    // rimScalar = pow(rimScalar, _RimAddBias);
     rimScalar = smoothstep(_RimAddGradientMin, _RimAddGradientMax, rimScalar);
     col = lerp(col, col + _RimAddColor, rimScalar * _RimAddColorBlend);
 }
 
-inline void applyLocalLighting(inout float3 col, const float3 normalizedWorldNormal, const float3 worldPosition, const float alpha, float3 cameraPos)
+inline void applyLocalLighting(inout float3 col, const float3 normalizedWorldNormal, const float3 worldPosition, const float alpha)
 {
-    const LitData ld = calcLitData(normalizedWorldNormal, worldPosition, cameraPos);
+    const LitData ld = calcLitData(normalizedWorldNormal, worldPosition);
     applyMatcap(col, ld.matcapUV, alpha);
     applyRimLighten(col, ld.rimScalar);
     applyRimDarken(col, ld.rimScalar);
@@ -154,6 +156,7 @@ float shEvaluateDiffuseL1Geomerics_local(float L0, float3 L1, float3 n)
 
     return R0 * (a + (1.0f - a) * (p + 1.0f) * pow(q, p));
 }
+
 float3 BetterSH9(float3 normal)
 {
     float4 SHAr = _ProbeAverage > 99 ? unity_SHAr : ((unity_SHAr * _ProbeAverage) + unity_SHAg + unity_SHAb) / (2.0 + _ProbeAverage);
@@ -214,21 +217,13 @@ inline void applyAOVertexColors(inout float3 col, float3 vertexColor, float file
 }
 
 // Overload for when cameraPos is supplied
-inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor, float3 cameraPos)
-{
-    float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
-    applyAOVertexColors(col, aoVertColor, lightColorSample.a);
-    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a, cameraPos);
-    applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
-    col += lightColorSample.rgb;
-}
-
-// Overload for when cameraPos is ommitted
 inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor)
 {
     float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
     applyAOVertexColors(col, aoVertColor, lightColorSample.a);
-    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a, _WorldSpaceCameraPos.xyz);
+    applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a);
     applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
     col += lightColorSample.rgb;
 }
+
+#endif
