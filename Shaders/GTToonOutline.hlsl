@@ -6,32 +6,39 @@ Texture2D _GTToonGrabTexture;
 float4 _GTToonGrabTexture_TexelSize;
 SamplerState _bilinear_clamp_Sampler;
 
-Texture2D _OutlineColorTex;
+// Outline Color
 float4 _OutlineColor;
+Texture2D _OutlineColorTex;
 
-float _NormalSampleMult;
-float _NormalSampleBias;
-float _FarNormalSampleMult;
+// Outline Size
+float _LineSize;
+float _LineSizeNear;
+float _NearLineSizeRange;
 
-float _ConvexSampleMult;
-float _ConvexSampleBias;
-float _FarConvexSampleMult;
-
-float _FarDist;
-
-float _DepthSilhouetteMultiplier;
+// Depth Outline
 float _LocalEqualizeThreshold;
+float _DepthSilhouetteMultiplier;
+
+// Depth Outline Gradient
 float _DepthGradientMin;
 float _DepthGradientMax;
 float _DepthEdgeSoftness;
 
-float _LineSizeNear;
-float _LineSize;
-float _NearLineSizeRange;
-
-float _NormalEdgeSoftness;
+// Normal Outline Gradient
 float _NormalGradientMin;
 float _NormalGradientMax;
+float _NormalEdgeSoftness;
+
+// Concave Normal Outline Sampling
+float _NormalSampleMult;
+float _FarNormalSampleMult;
+
+// Convex Normal Outline Sampling
+float _ConvexSampleMult;
+float _FarConvexSampleMult;
+
+// Normal Far Distance
+float _FarDist;
 
 // N E S W
 #define DIRECTIONAL_SAMPLE_COUNT 4
@@ -244,9 +251,17 @@ inline float SampleToonOutline(float2 uv, float dist)
 	return max(depth, curvature);
 }
 
+// Standard overload where outline color and alpha is sampled from texture.
 inline void applyToonOutline(inout float3 col, float2 screenUv, float2 mainUv, float dist)
 {
 	const float4 colorTex = _OutlineColorTex.Sample(_bilinear_clamp_Sampler, mainUv);
 	const float outline = SampleToonOutline(screenUv, dist);
 	col = lerp(col, _OutlineColor * colorTex.rgb, outline * colorTex.a);
+}
+
+// Alternative overload not used internally for situations where outline color and alpha is supplied not from a texture.
+inline void applyToonOutline(inout float3 col, float2 uv, float dist, float alpha, float3 outlineColor)
+{
+	const float outline = SampleToonOutline(uv, dist);
+	col = lerp(col, outlineColor, outline * alpha);
 }

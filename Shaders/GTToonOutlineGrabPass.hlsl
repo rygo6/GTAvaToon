@@ -4,6 +4,10 @@ struct grabpass_appdata
 {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+    #ifdef GT_OutlineGrabPass_APPDATA
+        GT_OutlineGrabPass_APPDATA
+    #endif
+    UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct grabpass_v2f
@@ -14,6 +18,9 @@ struct grabpass_v2f
     // centroid float3 viewNormal : NORMAL1; 
     // float depth: DEPTH;
     centroid float4 normal_depth : NORMAL;
+    #ifdef GT_OutlineGrabPass_V2F
+        GT_OutlineGrabPass_V2F
+    #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
@@ -26,10 +33,10 @@ inline float linearStep(float a, float b, float x)
 }
 
 // tnx https://github.com/cnlohr/shadertrixx
-bool IsInMirror()
-{
-    return unity_CameraProjection[2][0] != 0.f || unity_CameraProjection[2][1] != 0.f;
-}
+//bool IsInMirror()
+//{
+//    return unity_CameraProjection[2][0] != 0.f || unity_CameraProjection[2][1] != 0.f;
+//}
             
 grabpass_v2f grabpass_vert(const grabpass_appdata v)
 {
@@ -37,13 +44,37 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(grabpass_v2f, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+    #if defined(USING_STEREO_MATRICES)
+        float3 PlayerCenterCamera = ( unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1] ) / 2;
+    #else
+        float3 PlayerCenterCamera = _WorldSpaceCameraPos.xyz;
+    #endif
+
+    if (_VRChatMirrorMode > 0)
+    {
+        PlayerCenterCamera = _VRChatMirrorCameraPos;
+    }
+
+    float3 position = v.vertex;
+
+    // modify vertex positions in object space using this define
+    #ifdef GT_OutlineGrabPass_OSVERTEX
+        GT_OutlineGrabPass_OSVERTEX
+    #endif
     
-    o.pos = UnityObjectToClipPos(v.vertex);
-    
-    const float3 worldPos = mul(unity_ObjectToWorld, v.vertex);
-    const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
-    const float centerDis = distance(centerPos, _WorldSpaceCameraPos);
-    const float dist = distance(worldPos, _WorldSpaceCameraPos);
+    float3 worldPos = mul(unity_ObjectToWorld, float4(position, 1.0));
+
+    // modify vertex positions in world space using this define
+    #ifdef GT_OutlineGrabPass_WSVERTEX
+        GT_OutlineGrabPass_WSVERTEX
+    #endif
+
+    o.pos = UnityWorldToClipPos(worldPos);
+
+    const float3 centerPos = unity_ObjectToWorld[3].xyz; // gets the object space origin in world space directly from the transform
+    const float centerDis = distance(centerPos, PlayerCenterCamera);
+    const float dist = distance(worldPos, PlayerCenterCamera);
     const float depth = linearStep(centerDis - _BoundingExtents, centerDis + _BoundingExtents, dist) + _DepthOffset;
 
     // o.depth = depth;
