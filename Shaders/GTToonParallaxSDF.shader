@@ -97,7 +97,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         _DirectGamma ("DirectGamma", Range(0,2)) = .5
         
         [Header(Light Probes)]
-    	_ProbeAverage ("Probe Average", Range(1,100)) = 100
+    	_ProbeAverage ("Probe Average", Range(50,100)) = 80
     }
     Subshader
     {

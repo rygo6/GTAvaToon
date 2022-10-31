@@ -1,14 +1,85 @@
 # GTAvaToon
 
-# This is Pre-Alpha, missing major features and will change significantly. Don't yet waste time trying to use this unless your a rather advanced Unity dev wanting to help me sort some issues out in it and are on-board with my somewhat odd intents.
+## What? Why?
 
-## What?
+This is an Avatar Toon Shader intended to be used in VRChat. My time spent in VRChat and other Social VR platforms taught me a number of things about the particular nuances of avatars specifically in a Social VR or "VR Metaverse" context. This shader is an attempt to turn those learnings into something tangible.
 
-This is an Avatar Toon Shader intended to be used in VRChat. This shader focuses less on flashy effects, less on offering variety and more specifically on a particular style of shading. This particular style of shading is also a complete abomination to all conceptions of "Good Physically Based Lighting". It's also an abomination to some concepts of Toon shading too! 
+### 1. People care more about their avatar's lighting looking exactly how they want more than they care about it being realistic or matching the world or anything else.
+
+This is something that is immediately obvious in VRChat from the number of people running around with their avatar completely flat shaded! No lighting at all! Why? Because in an all User-Generated-Content paradigm you cannot rely on the world lighting to be good. If you trust the world lighting, some percentage of the time you will appear terrible. Also, even in worlds with correctly done lighting, if there is a darker area, people still want to be clearly visible. It is after all a social experience primarily and being obscured by shadows is disruptive to seeing each other and interacting with each other. 
+
+So what was the easy solution? Either people turn off lighting entirely and go flat shaded, or they crank up emission!
+
+Neither of these solutions I think are adequate. Fully ignoring the world lighting can be disruptive to immersion and can also be obnoxious to others if your flying around a dimly lit space with full bright unlit shaders.
+
+My solution is to selectively take *some* of the world lighting, average it, condense it and then apply it on top of an entirely separate lighting model that is local to the avatar. This allows users to define lighting on their avatar exactly as they wish, and then specify the constraints to which the world lighting is allowed to change that.
+
+Yes. This a complete abomination to anything known as "Physically Correct Lighting" and even other Toon lighting techniques. But that is because, this is not supposed to be either. This is for a novel use case. Where physical accuracy is irrelevant, and instead freedom of self-expression and social interaction is primary. Trying to enforce a standardized lighting model and aesthetic across the entire Metaverse would be like trying to enforce a single aesthetic across the entire web. 
+
+#### World Lighting and Local Lighting
+A fundamental concept of this shader that is currently implemented, and I am going to continue to build upon is what I termed `Local Lighting` and `World Lighting`.
+
+`Local Lighting` defines the lighting on your avatar that will never change, and ignore the world lighting. Currently this is rather simple, offering you a MatCap, Rim Light, Rim Darkening and Ambient Occlusion baked into the vertex colors. I have more plans for Local Lighting settings, but am starting with these as it what most people are familiar with.
+
+`World Lighting` defines how the lighting of the world will then affect your local lighting. This where this shader actually offers something rather novel not on others. 
+
+The incoming world lighting can be compressed and shifted in same exact way the 'Levels' panel in Photoshop lets you compress and shift brightness of an image. It is actually the same exact math as photoshop.
+
+This route I believe is a better method compared to adding emission because it enables you to pull up the the lows, compressing them, while still keeping the highs at the same position. Enabling you to set a minimum darkness for your avatar, but then not having it become over bright in bright world lighting.
+
+#### Light Probe Averaging
+
+Another novel option available in the `World Lighting` section is the ability to set a `Probe Average`. This will average the incoming light probe data. This will end up flattening bright and dark contrast of any incoming light, it will also lower the saturation of colors. If you are standing exactly in between a red, green and blue light with this set to 1 for full averaging, then it will create white light with an averaged luminosity.
+
+
+
+
+## Settings
+
+### Local Lighting
+#### Light Levels
+
+### World Lighting
+#### Light Levels
+This settings work the exact same as the Photoshop Levels panel to condense and shift the incoming world lighting levels. Tweak them to condense the lighting to stay within a range of minimum and maximum lighting levels.
+- **Black Level:** 
+  - Clip black level from world lighting.
+- **White Level:** 
+  - Clip white levels from world lighting.
+- **Output Black Level:** 
+  - Compress black levels from world lighting upward.
+- **Output White Level:** 
+  - Compress white levels from world lighting downwards.
+- **Gamma:** 
+  - Gamma of world lighting.
+
+#### Light Probes
+
+- **Probe Average:**
+    - Average light probe values. 1 is fully averaged. 100 is no averaging.
+
+
+## ????
+
+Currently it is set up to produce roughly the same lighting whether a world is only with baked Light Probes, of it is also lit with a realtime Directional Light 
+
+
+
+
+
+
+This particular style of shading is also a complete abomination to all conceptions of "Good Physically Based Lighting". It's also an abomination to some concepts of Toon shading too! 
 
 My general mentality about the Metaverse is "Fuck Physics", that includes rigid/soft body simulation, gravity, and the physics of light too. We don't need the constraints of physical reality forced upon us in the Metaverse. If I want to fly, I should get to fly. If I want to distort the lighting of the world as it hits my avatar, I should get to. Sure physical constraints should be optional for fun, but not the default forced standard. 
 
 I believe the thing to try to replicate in VR is much more so what one experiences in dream states, the direct perception of your mind, not the optics of a DSLR camera.
+
+Here is a longer caffeine-fueled rant about the [Why](#why).
+
+## Features
+
+
+
 
 ## Why? 
 

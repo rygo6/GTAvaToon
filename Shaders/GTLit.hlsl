@@ -159,9 +159,10 @@ float shEvaluateDiffuseL1Geomerics_local(float L0, float3 L1, float3 n)
 
 float3 BetterSH9(float3 normal)
 {
-    float4 SHAr = _ProbeAverage > 99 ? unity_SHAr : ((unity_SHAr * _ProbeAverage) + unity_SHAg + unity_SHAb) / (2.0 + _ProbeAverage);
-    float4 SHAg = _ProbeAverage > 99 ? unity_SHAg : (unity_SHAr + (unity_SHAg * _ProbeAverage) + unity_SHAb) / (2.0 + _ProbeAverage);
-    float4 SHAb = _ProbeAverage > 99 ? unity_SHAb : (unity_SHAr + unity_SHAg + (unity_SHAb * _ProbeAverage)) / (2.0 + _ProbeAverage);
+    float probeAverage = 101 - _ProbeAverage;
+    float4 SHAr = _ProbeAverage < 51 ? unity_SHAr : ((unity_SHAr * probeAverage) + unity_SHAg + unity_SHAb) / (2.0 + probeAverage);
+    float4 SHAg = _ProbeAverage < 51 ? unity_SHAg : (unity_SHAr + (unity_SHAg * probeAverage) + unity_SHAb) / (2.0 + probeAverage);
+    float4 SHAb = _ProbeAverage < 51 ? unity_SHAb : (unity_SHAr + unity_SHAg + (unity_SHAb * probeAverage)) / (2.0 + probeAverage);
     
     float3 L0 = float3(SHAr.w, SHAg.w, SHAb.w);
     float3 nonLinearSH = float3(0, 0, 0);

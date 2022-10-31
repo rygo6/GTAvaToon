@@ -171,8 +171,8 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         
     	[Header(Light Probes)]
     	
-    	[Tooltip(Average light probe values.)]
-    	_ProbeAverage ("Probe Average", Range(1,100)) = 50
+    	[Tooltip(Average light probe values. 1 is fully averaged. 100 is no averaging.)]
+    	_ProbeAverage ("Probe Average", Range(50,100)) = 80
     }	
 			
 	CustomEditor "GeoTetra.GTAvaToon.Editor.GTToonMatcapGUI"
