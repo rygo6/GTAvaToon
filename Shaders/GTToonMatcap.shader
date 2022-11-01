@@ -56,7 +56,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0
     	
     	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
-        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
+        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.3
     	
     	[Tooltip(Utilize fwidth to apply additinal softness to line. Larger values will make it softer but will reveal block artifacts.)]
         _DepthEdgeSoftness ("Depth Outline Edge Softness", Range(0, 2)) = .25
@@ -70,7 +70,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
     	
     	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .2
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .3
     	
     	[Tooltip(Utilize fwidth to apply additinal softness to line. Larger values will make it softer but will reveal block artifacts.)]
         _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
