@@ -23,10 +23,10 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 
         [Header(Outline Size)]
     	[Tooltip(Primary line size. Change this to control overall line thickness.)]
-    	_LineSize ("Line Size", Range(0, 2)) = .8
+    	_LineSize ("Line Size", Range(0, 2)) = .4
     	
     	[Tooltip(Line size when your view is zero distance from the surface. Change this to make the line thinner when up close.)]
-        _LineSizeNear ("Line Size Near", Range(0, 2)) = .2
+        _LineSizeNear ("Line Size Near", Range(0, 2)) = .1
     	
     	[Tooltip(The distance at which the line size will transition from Line Size Near to Line Size.)]
         _NearLineSizeRange ("Near Line Size Range", Range(0, 4)) = 1
