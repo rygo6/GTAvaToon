@@ -2,97 +2,80 @@
 
 ## What? Why?
 
-This is an Avatar Toon Shader intended to be used in VRChat. My time spent in VRChat and other Social VR platforms taught me a number of things about the particular nuances of avatars specifically in a Social VR or "VR Metaverse" context. This shader is an attempt to turn those learnings into something tangible.
+Another VRChat Avatar Toon shader!? Why!?
 
-### 1. People care more about their avatar's lighting looking exactly how they want more than they care about it being realistic or matching the world or anything else.
+Well, this one is quite different from the others. 
 
-This is something that is immediately obvious in VRChat from the number of people running around with their avatar completely flat shaded! No lighting at all! Why? Because in an all User-Generated-Content paradigm you cannot rely on the world lighting to be good. If you trust the world lighting, some percentage of the time you will appear terrible. Also, even in worlds with correctly done lighting, if there is a darker area, people still want to be clearly visible. It is after all a social experience primarily and being obscured by shadows is disruptive to seeing each other and interacting with each other. 
+My time spent in VRChat taught me a number of things about the nuances of avatars in a Social VR or "VR Metaverse" context. This specific use case is different enough from typical 3D games that it necessitates some new mentalities and designs for shaders. This is an attempt to start producing something tangible from what I have learned. To go more in depth on the Why behind all this, go to the [Learnings and Reasoning](#Learnings and Reasoning) section.
+
+A few major technical points:
+
+- The outline is done in a way similar to modern cell shaded games where it samples the normal and depth map. No other avatar shader that works in VRChat draws a toon outline in this manner. This produces a much more detailed and accurate toon outline compared to the inverse hull method every other avatar shader in VRChat currently uses.
+
+
+- The lighting model is designed around a novel concept of `Local Lighting` and `World Lighting` specifically to give you greater control over your avatar's lighting and how the world lighting affects it. A major premise behind the design of this shader is that ***you cannot trust the world lighting!*** This intentionally breaks physically accurate lighting to give you more 'Photoshop-like' controls on how to specifically dial in how the world lighting affects your avatar so that you can tame whacky world lighting and keep it within constraints that will always look good.
+
+
+- The lighting math of this shader is partially derived from [this great project](https://github.com/lukis101/VRCUnityStuffs/tree/master/SH) which was an exploration in different Spherical Harmonics techniques. I tested all of them in a wide range of worlds with really terrible lighting, chose one that seems to produce the best results on average and added another tweak. What this means is worlds with whacky light probe data will still look good with this shader. I still have yet to find a world with light probe data that this shader can't make look decent. If you find one, please point it out to me.
+
+Again, to understand more of the reasoning behind these design choices go to the [Learnings and Reasoning](#Learnings and Reasoning) section.
+
+## Installation
+
+1. Open the Unity Package Manager under `Window > Package Manager`.
+2. Click the + in the upper left of package manager window.
+3. Select 'Add package from git url...'.
+4. Paste `https://github.com/rygo6/GTAvaToon.git` into the dialogue and click 'Add'.
+
+## Usage
+
+Currently the shaders ready to be used are:
+
+### `GeoTetra/GTAvaToon/Outline/GTToonMatcap`
+This is the main shader you will want to put on you whole avatar. 
+
+You can hover over each field and a tooltip will popup to tell you more about what each one does.
+
+Generally the defaults should be good right out of the box, but there are a few things to watch out for.
+- `Depth Bounding Extents` needs to be set large enough to encapsulate your whole avatar. This value should also be the same on all materials on the avatar. By default it is `0.5` which creates a bounding box of 1x1x1 if your avatar is not contained within that size, then increase this value as needed.
+- `Line Size` would be the main thing to change to affect the line size. Everything else can be a bit complicated to understand, but the tooltips should help.
+- `Gradient Min Max` on the Depth Outline and Normal Outline sections are the primary way you tune the thresholding of the outline, multiplies should generally not need to be changed. Min should always be smaller than Max! But beware, this also affects the smoothness and anti-aliasing of the outline. If Min and Max are too close together, the line may appear too aliased and grainy, too far apart and may appear too blurry. As you adjust these it is good to zoom in on your avatar in unity GameView and look at how it is affecting the quality of the anti-aliasing on the line. Note: The SceneView is not anti-aliased! So you much look in the GameView to get feedback on this.
+- `Local Lighting` defines the lighting on your avatar that will never change, and ignore the world lighting. Currently this is rather simple, offering you a MatCap, Rim Light, Rim Darkening and Ambient Occlusion baked into the vertex colors. I have more plans for Local Lighting settings, but am starting with these as it is what most people are familiar with. They should generally work as expected.
+- `AO Vertex Color` assumes that AO is baked into the vertex colors. If you would like to generate this data you can use my other project [GTAvaUtil](https://github.com/rygo6/GTAvaUtil) and the `Bake Vertex AO On Combined MeshRenders+MeshFilters and Apply to Vertex Color...` functionality.
+- `World Lighting` defines how the lighting of the world will then affect your local lighting. The incoming world lighting can be compressed and shifted via the `Light Levels` section and works the same exact way the 'Levels' panel in Photoshop works. This route I believe is a better method compared to adding emission because it enables you to pull up the lows, compressing them, while still keeping the highs at the same position. Enabling you to set a minimum darkness for your avatar, but then not having it become over bright in bright world lighting.
+- `Light Probe Averaging` This let you average incoming light probe data in case you want less light variation coming from the world. If you set this fully to 100 then world lighting will fall across your avatar uniformly and it largely becomes a way to have the brightness of your avatar reflect the world bright to some degree. You need to actually bake down some light probes in your scene with varying levels and colors to see any affect from changing this.
+
+### `GeoTetra/GTAvaToon/IgnoreOutline/GTUnlit`
+
+This is a shader that will ignore the outline. You may find that smaller thinner items such as glasses or whiskers produce artifacts with the outline. For those cases it is best to just omit them from the outline entirely. That is what this shader is for. 
+
+Technically any shader can be set to ignore the outline by putting its rendering queue higher than 2010.
+
+## Learnings and Reasoning
+
+### Learning #1. People care more about their avatar's lighting looking exactly how they want more than they care about it being realistic or matching the world or anything else.
+
+This is something that is immediately obvious in VRChat from the number of people running around with their avatar completely flat shaded! No lighting at all! Why? Because in an all User-Generated-Content paradigm you cannot rely on the world lighting to be good. If you trust the world lighting, some percentage of the time you will appear terrible. Also, even in worlds with correctly done lighting there can still be overly dark areas or areas where lighting is bland. 
 
 So what was the easy solution? Either people turn off lighting entirely and go flat shaded, or they crank up emission!
 
 Neither of these solutions I think are adequate. Fully ignoring the world lighting can be disruptive to immersion and can also be obnoxious to others if your flying around a dimly lit space with full bright unlit shaders.
 
-My solution is to selectively take *some* of the world lighting, average it, condense it and then apply it on top of an entirely separate lighting model that is local to the avatar. This allows users to define lighting on their avatar exactly as they wish, and then specify the constraints to which the world lighting is allowed to change that.
+My solution is to selectively take *some* of the world lighting, average it, condense it and then apply it on top of an entirely separate lighting model that is local to the avatar. This allows users to define lighting on their avatar exactly as they wish, and then specify the constraints to which the world lighting is allowed to change that. So then you can make your avatar be lit exactly how you want, but then still respect the world lighting to some degree to provide better immersion.
 
-Yes. This a complete abomination to anything known as "Physically Correct Lighting" and even other Toon lighting techniques. But that is because, this is not supposed to be either. This is for a novel use case. Where physical accuracy is irrelevant, and instead freedom of self-expression and social interaction is primary. Trying to enforce a standardized lighting model and aesthetic across the entire Metaverse would be like trying to enforce a single aesthetic across the entire web. 
+I believe this is an issue that will always exist in this User-Generated 3D Social "Metaverse" use case. That ***you cannot trust the world lighting!***
 
-#### World Lighting and Local Lighting
-A fundamental concept of this shader that is currently implemented, and I am going to continue to build upon is what I termed `Local Lighting` and `World Lighting`.
-
-`Local Lighting` defines the lighting on your avatar that will never change, and ignore the world lighting. Currently this is rather simple, offering you a MatCap, Rim Light, Rim Darkening and Ambient Occlusion baked into the vertex colors. I have more plans for Local Lighting settings, but am starting with these as it what most people are familiar with.
-
-`World Lighting` defines how the lighting of the world will then affect your local lighting. This where this shader actually offers something rather novel not on others. 
-
-The incoming world lighting can be compressed and shifted in same exact way the 'Levels' panel in Photoshop lets you compress and shift brightness of an image. It is actually the same exact math as photoshop.
-
-This route I believe is a better method compared to adding emission because it enables you to pull up the the lows, compressing them, while still keeping the highs at the same position. Enabling you to set a minimum darkness for your avatar, but then not having it become over bright in bright world lighting.
-
-#### Light Probe Averaging
-
-Another novel option available in the `World Lighting` section is the ability to set a `Probe Average`. This will average the incoming light probe data. This will end up flattening bright and dark contrast of any incoming light, it will also lower the saturation of colors. If you are standing exactly in between a red, green and blue light with this set to 1 for full averaging, then it will create white light with an averaged luminosity.
+Yes, this a complete abomination to anything known as "Physically Correct Lighting" and even other Toon lighting techniques. But that is because, this is not supposed to be either. This is for a novel use case. Where physical accuracy is irrelevant and instead freedom of self-expression and social interaction is primary. Trying to enforce a standardized lighting model and aesthetic across the entire Metaverse would be like trying to enforce a single aesthetic across the entire web. I do not believe physics should be uniformly enforced on everything, that includes the physics of gravity, collision, and also the physics of light. We are not duplicating physical reality, we are creating an entirely novel kind of reality.
 
 
+### Learning #2. Simpler shading and toon-ish aesthetic increases one's sense of 'avatar embodiment'.
 
-
-## Settings
-
-### Local Lighting
-#### Light Levels
-
-### World Lighting
-#### Light Levels
-This settings work the exact same as the Photoshop Levels panel to condense and shift the incoming world lighting levels. Tweak them to condense the lighting to stay within a range of minimum and maximum lighting levels.
-- **Black Level:** 
-  - Clip black level from world lighting.
-- **White Level:** 
-  - Clip white levels from world lighting.
-- **Output Black Level:** 
-  - Compress black levels from world lighting upward.
-- **Output White Level:** 
-  - Compress white levels from world lighting downwards.
-- **Gamma:** 
-  - Gamma of world lighting.
-
-#### Light Probes
-
-- **Probe Average:**
-    - Average light probe values. 1 is fully averaged. 100 is no averaging.
-
-
-## ????
-
-Currently it is set up to produce roughly the same lighting whether a world is only with baked Light Probes, of it is also lit with a realtime Directional Light 
-
-
-
-
-
-
-This particular style of shading is also a complete abomination to all conceptions of "Good Physically Based Lighting". It's also an abomination to some concepts of Toon shading too! 
-
-My general mentality about the Metaverse is "Fuck Physics", that includes rigid/soft body simulation, gravity, and the physics of light too. We don't need the constraints of physical reality forced upon us in the Metaverse. If I want to fly, I should get to fly. If I want to distort the lighting of the world as it hits my avatar, I should get to. Sure physical constraints should be optional for fun, but not the default forced standard. 
-
-I believe the thing to try to replicate in VR is much more so what one experiences in dream states, the direct perception of your mind, not the optics of a DSLR camera.
-
-Here is a longer caffeine-fueled rant about the [Why](#why).
-
-## Features
-
-
-
-
-## Why? 
-
-Might seem odd to toss another "Toon" shader in VRChat Avatar land but it became clear to me to do what I wanted I really needed to dig into it myself. Currently this does offer some shading techniques that objectively do not exist in anything else available for VRChat right now, and I have more novel techniques I intend to add. But more so the philosophy behind the development of this shader is different. To those uninitiated with VRChat avatars, full body tracking, and the whole notion of "Avatar Binding" or "Phantom Sense" you may see this shader as a complete mutilation of all things considered proper in lighting, which it may be, but it's because it's aim is entirely tangential to "correct" lighting or "Physically Based" lighting. The single driving question behind this shader is, "What increases Phantom Sense?"
-
-It became clear to me that the shading on an avatar does affect the degree to which your mind will project on the avatar when wearing it in VR with full body tracking. It also became clear to me that Physically Based Rendering carries no correlation to the degree to which this happens, and can actually be obstructive to it. That what tends to induce a greater degree of phantom sense, of your mind projecting itself on your avatar, is if:
+It became clear to me that the shading on an avatar does affect the degree to which your mind will project on the avatar when wearing it in VR with full body tracking. It also became clear to me that Physically Based Rendering carries no correlation to the degree to which this happens, and can actually be obstructive to it. That what tends to induce a greater degree of phantom sense, of your mind projecting itself on your avatar, of 'avatar embodiment' is if:
 1. The avatar appears to you more so how your internal mind remembers perception of yourself.
 2. Your mind has to process less before it recognizes that internally remembered image of itself.
 
-What I mean by #1 is that, people internally don't remember themselves as a photograph from a DSLR camera, the internal image left in the mind is quite abstracted from literal physical reality. Often if someone sees a DSLR hi-res photo of themselves they will do a second take, either not liking the photo, or questioning "Is that what I really look like?" Because one's internal mental image is not a direct correlation to their literal physical form as a DSLR camera would capture it. My theory is that, the more you can present something to someone which matches that internal mental image of themselves, the more their mind will instinctively project themselves onto the form, creating a greater sense of binding to the avatar, and a greater degree of phantom sense.
+What I mean by #1 is that, people internally don't remember themselves as a photograph from a DSLR camera, the internal image left in the mind is quite abstracted from literal physical reality. Often if someone sees a DSLR hi-res photo of themselves they will do a second take, either not liking the photo, or questioning "Is that what I really look like?" Because one's internal mental image is not a direct correlation to their literal physical form as a DSLR camera would capture it. My theory is that, the more you can present something to someone which matches that internal mental image of themselves, the more their mind will instinctively project themselves onto the form, creating a greater sense of avatar embodiment and a greater degree of phantom sense.
 
-For #2, I find the more mental energy the mind must use to process a visual before it recognizes it as itself, the less your mind will project onto it. Instead your mind gets absorbed into processing the details of the visual, rather experiencing the visual as itself. Ideally you want a visual that you can glance at and with minimal mental energy consumed it immediately registers as "You". To understand more of what I mean by this, and also to give credit where this theory is partially derived, read [this page](https://twitter.com/_rygo6/status/1523449506263576576/photo/1) from Scott McCloud's "Understanding Comics". It explains how, if shown a photograph, the mind tends to not project itself onto the photographic form as readily compared to when shown a basic smiley face. As the smiley face is universally and immediately recognizable as some aspect of "You", so when you see a smiley face, it registers to your mind as you smiling. But of course everyone running around as a basic smiley face would be boring. So I am seeking the ideal middle ground between the immediately recognizable smiley face and the realistic form. So your mind still recognizes it as "You" as aptly as the smiley face, but visually it is more idiosyncratic to "You".
+For #2 I find the more mental energy the mind must use to process a visual before it recognizes it as itself, the less your mind will project onto it. Instead your mind gets absorbed into processing the details of the visual, rather experiencing the visual as yourself. Ideally you want a visual that you can glance at and with minimal mental energy consumed it immediately registers as "You". To understand more of what I mean by this, and also to give credit where this theory is partially derived, read [this page](https://twitter.com/_rygo6/status/1523449506263576576/photo/1) from Scott McCloud's "Understanding Comics". It explains how, if shown a photograph, the mind tends to not project itself onto the photographic form as readily compared to when shown a basic smiley face. As the smiley face is universally and immediately recognizable as some aspect of "You", so when you see a smiley face, it registers to your mind as you smiling. But of course everyone running around as a basic smiley face would be boring. So I am seeking the ideal middle ground between the immediately recognizable smiley face and the realistic form. So your mind still recognizes it as "You" as aptly as the smiley face, but visually it is more idiosyncratic to "You".
 
-Each feature of this shader, and any future features, stem from a supposed theory and observation about what may increase phantom sense. So far, and what will probably continue to be the trend in features, are things that may theoretically enable more immediate recognition of a form that are as simple as possible, and do not consume any more mental energy than the bare minimum for the form to register to your mind. As such, I am not going to be apt to add things like flashy effects, maybe at some point, but I will tend to be interested in additions and changes that have some decent reasoning as to how they could increase phantom sense. I will also tend to listen more so to those who I know experience this phenomena strongly in VR and share my interest in trying to figure out what can amplify it through first-hand observation and experience within VR.
-
-Will need to document theories behind current features so far. Probably in wiki?
+Toon outlines I find greatly aid this, as it reduces the noise to signal ratio of whats being visually communicated. It presents to your mind high contrast essential details for your mind to recognize more aptly without having to process as much visual noise.
