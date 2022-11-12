@@ -1,8 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GeoTetra.GTAvaToon.Editor
 {
@@ -13,85 +11,22 @@ namespace GeoTetra.GTAvaToon.Editor
             var target = materialEditor.target as Material;
             Debug.Assert(target != null, nameof(target) + " != null");
             
-            // hrm
+            // Avatars set to different render queues which share the _GTToonGrabTexture will produce
+            // issues between each other if not on the same renderqueue. So just hide and override.
             target.renderQueue = 2010;
             
             // really we just doing this do hide the renderqueue field
             foreach (var materialProperty in properties)
             {
+                if (materialProperty.name == "_DepthId" && materialProperty.floatValue == 1)
+                {
+                    // set ids to different values initially randomly so everyone ends up with
+                    // higher chance of drawing line on each other, and materials initially draw
+                    // lines between each other
+                    materialProperty.floatValue = Random.Range(.01f, 1f);
+                }
                 materialEditor.ShaderProperty(materialProperty, materialProperty.displayName);
             }
-        }
-    }
-    
-    public class TooltipDrawer : MaterialPropertyDrawer
-    {
-        readonly string m_Tooltip;
-        static readonly MethodInfo m_InternalDefaultMethod;
-        
-        static TooltipDrawer()
-        {
-            // yes really, otherwise you must duplicate so much code
-            var methods = typeof(MaterialEditor).GetMethods(
-                BindingFlags.NonPublic | 
-                BindingFlags.Public | 
-                BindingFlags.Instance);
-            
-            m_InternalDefaultMethod = methods.FirstOrDefault(
-                m => m.Name.Equals("DefaultShaderPropertyInternal", 
-                StringComparison.InvariantCulture));
-        }
-    
-        public TooltipDrawer(string tooltip) => m_Tooltip = tooltip;
-        
-        public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
-        {
-            return 0;
-        }
-
-        public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
-        {
-            position.y += 1;
-            position.height = EditorGUIUtility.singleLineHeight;
-            GUI.Label(position, new GUIContent(String.Empty, m_Tooltip));
-            m_InternalDefaultMethod.Invoke(editor, new object[] { prop, label });
-        }
-    }
-
-    public class MaterialLargeHeaderDecorator : MaterialPropertyDrawer
-    {
-        readonly string m_Header;
-        static readonly GUIStyle m_GUIStyle;
-        bool m_FoldoutEnable = true;
-
-        static MaterialLargeHeaderDecorator()
-        {
-            m_GUIStyle = new GUIStyle(EditorStyles.label);
-            m_GUIStyle.fontSize += 2;
-        }
-
-        public MaterialLargeHeaderDecorator(string header) => m_Header = header;
-
-        public override float GetPropertyHeight(
-            MaterialProperty prop,
-            string label,
-            MaterialEditor editor)
-        {
-            return EditorGUIUtility.singleLineHeight;
-        }
-
-        public override void OnGUI(
-            Rect position,
-            MaterialProperty prop,
-            string label,
-            MaterialEditor editor)
-        {
-            EditorGUI.indentLevel = 0;
-            
-            GUI.Box(position, string.Empty);
-            EditorGUI.DropShadowLabel(position, m_Header, m_GUIStyle);
-            
-            EditorGUI.indentLevel = 1;
         }
     }
 }

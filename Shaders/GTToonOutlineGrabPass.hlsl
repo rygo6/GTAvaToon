@@ -8,6 +8,7 @@ struct grabpass_appdata
 {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+    float2 uv0 : TEXCOORD0;
     #ifdef GT_OutlineGrabPass_APPDATA
         GT_OutlineGrabPass_APPDATA
     #endif
@@ -25,7 +26,7 @@ struct grabpass_v2f
 };
 
 float _BoundingExtents;
-float _DepthOffset;
+float _DepthId;
 
 inline float linearStep(float a, float b, float x)
 {
@@ -56,21 +57,15 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     #endif
 
     o.pos = UnityWorldToClipPos(worldPos);
-
-    // float4 centerPos = float4(unity_ObjectToWorld[3].xyz, 1); // gets the object space origin in world space directly from the transform
+    
     const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
     const float centerDis = distance(centerPos, PlayerCenterCamera);
     const float dist = distance(worldPos, PlayerCenterCamera);
-    const float depth = linearStep(centerDis - _BoundingExtents, centerDis + _BoundingExtents, dist) + _DepthOffset;
+    const float depth = linearStep(centerDis - _BoundingExtents, centerDis + _BoundingExtents, dist);
     
     o.normal_depth.xy = COMPUTE_VIEW_NORMAL * 0.5 + 0.5;
-    // TF is it wz?! Because all object write 1 into the a/w channel by default and
-    // the EncodeFloatRG first R channel encodes a smooth gradient from near to far,
-    // the second G channel encode the striping additional data. So by putting the
-    // EncodeFloat R channel to the .w of the return col it forces all non-GTAvatoon
-    // objects in the grabpass to be as pure white, or the greatest depth, when
-    // you do DecodeFloat
-    o.normal_depth.wz = EncodeFloatRG(clamp(depth, 0, .99));
+    o.normal_depth.z = depth;
+    o.normal_depth.w = _DepthId;
     
     return o;
 }

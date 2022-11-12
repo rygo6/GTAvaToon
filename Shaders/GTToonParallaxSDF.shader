@@ -37,15 +37,13 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
 
         [Header(Depth Map)]
         _BoundingExtents ("Depth Bounding Extents", Float) = .5
-        _DepthOffset ("Depth Bounding Offset", Range(-.5,.5)) = 0
-//    	_DepthOffsetTex ("Depth Offset Texture", Color) = (0,0,0,0)
+        //    	_DepthOffsetTex ("Depth Offset Texture", Color) = (0,0,0,0)
         _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .03
-        [ToggleUI] _DepthSilhouetteMultiplier ("Depth Silhouette", Float) = 1
+        _DepthId ("Depth Id", Range(0,1)) = 0
 
         [Header(Depth Outline Gradient)]
         _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0.05
         _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
-        _DepthEdgeSoftness ("Depth Outline Edge Softness", Range(0, 2)) = .25
 
         [Header(Concave Normal Outline Sampling)]
         _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
@@ -57,8 +55,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
 
         [Header(Normal Outline Gradient)]
         _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .2
-        _NormalEdgeSoftness ("Normal Edge Softness", Range(0, 2)) = .25
+        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .4
 
         [Header(Far)]
         _FarDist ("Far Distance", Range(0,10)) = 10
@@ -105,11 +102,14 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         {
             "Queue" = "Geometry+10" 
             "RenderType" = "Opaque" 
-            "IgnoreProjector" = "True"
         }
 
         Pass
         {
+            Tags
+	        {
+				"IgnoreProjector" = "True"
+	        }
             HLSLPROGRAM
 	        #pragma target 5.0
             #pragma vertex grabpass_vert
@@ -139,7 +139,6 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED
                         
             #include "UnityCG.cginc"
-            #include "VRChatCG.cginc"
             #include "AutoLight.cginc"
             #include "GTToonOutline.hlsl"
             #include "GTLit.hlsl"

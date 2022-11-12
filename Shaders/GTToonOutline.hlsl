@@ -3,8 +3,6 @@
 
 #include "UnityCG.cginc"
 
-#define RAD2DEG (180.0 / UNITY_PI);
-
 Texture2D _GTToonGrabTexture;
 float4 _GTToonGrabTexture_TexelSize;
 SamplerState _bilinear_clamp_Sampler;
@@ -47,51 +45,40 @@ float _FarDist;
 #define DIRECTIONAL_SAMPLE_COUNT 4
 static const float2 _SampleOffsets[DIRECTIONAL_SAMPLE_COUNT] = { float2(0,1), float2(1,0), float2(0,-1), float2(-1,0) };
 
-// #define NINE_KERNEL
-#define FIVE_KERNEL
+// This is essentially the quincunx kernel
 
-#ifdef NINE_KERNEL
-// M N E S W NE NW SE SW
-#define KERNEL_SAMPLE_COUNT 9
-static const float2 _KernelOffsets[KERNEL_SAMPLE_COUNT] = {
-	float2(0, 0),
-	float2(1, 1), float2(-1, 1), float2(1, -1), float2(-1, -1),
-	float2(0, 1), float2(1, 0), float2(0, -1), float2(-1, 0),
-};
-#endif
+// I find you can't make the kernel smaller than this and still get good results
+// because the distance between the samples is not large enough to produce a
+// meaningful min/max values to appropriately compress via _LocalEqualizeThreshold.
 
-#ifdef FIVE_KERNEL
+// Also the extra smoothness of this kernel is ideal for thresholding min/max settings
+// to deal in the detailing of the outline.
+
 // M NE NW SE SW
 #define KERNEL_SAMPLE_COUNT 5
 static const float2 _KernelOffsets[KERNEL_SAMPLE_COUNT] = {
 	float2(0, 0),
 	float2(1, 1), float2(-1, 1), float2(1, -1), float2(-1, -1),
 };
-#endif
 
 struct SampleData {
-	float3 samples[KERNEL_SAMPLE_COUNT][4];
-	float minZ;
-	float maxZ;
-	float contrastZ;
+	// xy = normal, z = depth, w = id
+	float4 samples[KERNEL_SAMPLE_COUNT][4];
+	// x = depth, y = id
+	float2 depthMin;
+	float2 depthMax;
+	float2 depthContrast;
 };
 
 struct ToonData {
-	float3 values[KERNEL_SAMPLE_COUNT];
+	float4 values[KERNEL_SAMPLE_COUNT];
 	
-	float3 m() { return values[0]; }
+	float4 m() { return values[0]; }
 	
-	float3 ne()	{ return values[1]; }
-	float3 nw()	{ return values[2]; }
-	float3 se()	{ return values[3]; }
-	float3 sw()	{ return values[4]; }
-
-#ifdef NINE_KERNEL
-	float3 n()	{ return values[5]; }
-	float3 e()	{ return values[6]; }
-	float3 s()	{ return values[7]; }
-	float3 w()	{ return values[8]; }
-#endif
+	float4 ne()	{ return values[1]; }
+	float4 nw()	{ return values[2]; }
+	float4 se()	{ return values[3]; }
+	float4 sw()	{ return values[4]; }
 };
 
 inline float invLerp(float from, float to, float value)
@@ -99,7 +86,7 @@ inline float invLerp(float from, float to, float value)
     return saturate((value - from) / (to - from));
 }
 
-void SamplePass(out float3 samples[4], inout float minZ, inout float maxZ, float2 uv, float2 kernelSize)
+void SamplePass(out float4 samples[4], inout float2 minZ, inout float2 maxZ, float2 uv, float2 kernelSize)
 {
     UNITY_UNROLL
 	for (int sampleIndex = 0; sampleIndex < DIRECTIONAL_SAMPLE_COUNT; sampleIndex++)
@@ -107,31 +94,36 @@ void SamplePass(out float3 samples[4], inout float minZ, inout float maxZ, float
 		const float2 sampleUv = uv + (_SampleOffsets[sampleIndex] * kernelSize);
 		const float4 sample = _GTToonGrabTexture.Sample(_bilinear_clamp_Sampler, sampleUv);
 		const float2 exNormalSample = sample.xy * 2.0 - 1.0;
-		samples[sampleIndex].xy = float2(exNormalSample.x, exNormalSample.y);
-		samples[sampleIndex].z = DecodeFloatRG(sample.wz);
+		samples[sampleIndex].xy = exNormalSample.xy;
+		samples[sampleIndex].zw = sample.zw;
 		
-		minZ = min(minZ, samples[sampleIndex].z);
-		maxZ = max(maxZ, samples[sampleIndex].z);
+		minZ = min(minZ, sample.zw);
+		maxZ = max(maxZ, sample.zw);
 	}
 }
             
-inline SampleData SamplePassKernel(float2 uv, float2 kernelSize)
+inline SampleData SamplePassKernel(float2 uv, float2 texelSize, float2 kernelSize)
 {
 	SampleData sd;
-	sd.minZ = 1;
-	sd.maxZ = 0;
+	sd.depthMin = 10;
+	sd.depthMax = -10;
+
+	kernelSize = clamp(kernelSize, texelSize / 8, 100);
+	float2 difference = texelSize - (kernelSize * 2);
+	difference = difference < 0 ? 0 : difference;
+	float2 adjustedTexelSize = texelSize - difference;
 	
 	UNITY_UNROLL
 	for (int i = 0; i < KERNEL_SAMPLE_COUNT; ++i)
 	{
 		SamplePass(sd.samples[i],
-			sd.minZ,
-			sd.maxZ,
-			uv + _GTToonGrabTexture_TexelSize * _KernelOffsets[i],
+			sd.depthMin,
+			sd.depthMax,
+			uv + adjustedTexelSize * _KernelOffsets[i],
 			kernelSize);
 	}
 	
-	sd.contrastZ = sd.maxZ - sd.minZ;
+	sd.depthContrast = sd.depthMax - sd.depthMin;
 	
 	return sd;
 }
@@ -141,7 +133,7 @@ inline float linearStep(float a, float b, float x)
 	return saturate((x - a)/(b - a));
 }
 
-float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ) {
+float4 CalcToon(float4 samples[DIRECTIONAL_SAMPLE_COUNT], float2 depthMin, float2 depthMax) {
 
 	const float3 nNorm = float3(samples[0].xy, 0.5);
 	const float3 eNorm = float3(samples[1].xy, 0.5);
@@ -153,21 +145,23 @@ float3 CalcToon(float3 samples[DIRECTIONAL_SAMPLE_COUNT], float minZ, float maxZ
 	const float concavity = saturate(normalDifference * -1); 
 	const float convexity = saturate(normalDifference);
 
-	float minDepth = 1;
-	float maxDepth = 0;
+	float2 minDepthId = 10;
+	float2 maxDepthId = -10;
 	UNITY_UNROLL
 	for (int i = 0; i < DIRECTIONAL_SAMPLE_COUNT; i++)
 	{
-		float depth = samples[i].z;
-		minDepth = min(minDepth, depth);
-		maxDepth = max(maxDepth, depth);
+		const float2 depthId = samples[i].zw;
+		minDepthId = min(minDepthId, depthId);
+		maxDepthId = max(maxDepthId, depthId);
 	}
 	
-	maxDepth = smoothstep(minZ, maxZ + _LocalEqualizeThreshold, maxDepth);
-	minDepth = smoothstep(minZ, maxZ + _LocalEqualizeThreshold, minDepth);
-	float depthContrast = maxDepth - minDepth;
+	maxDepthId.x = smoothstep(depthMin.x, depthMax.x + _LocalEqualizeThreshold, maxDepthId.x);
+	minDepthId.x = smoothstep(depthMin.x, depthMax.x + _LocalEqualizeThreshold, minDepthId.x);
+	maxDepthId.y = smoothstep(depthMin.y, depthMax.y + .01, maxDepthId.y);
+	minDepthId.y = smoothstep(depthMin.y, depthMax.y + .01, minDepthId.y);
+	const float2 depthIdContrast = maxDepthId - minDepthId;
     
-	return float3(depthContrast, concavity, convexity);
+	return float4(concavity, convexity, depthIdContrast.x, depthIdContrast.y);
 }
 
 inline ToonData CalcToonKernel(SampleData sd)
@@ -179,30 +173,20 @@ inline ToonData CalcToonKernel(SampleData sd)
 	{
 		td.values[i] = CalcToon(
 			sd.samples[i],
-			sd.minZ,
-			sd.maxZ);
+			sd.depthMin,
+			sd.depthMax);
 	}
 
 	return td;
 }
 
 // partly derived from https://catlikecoding.com/unity/tutorials/advanced-rendering/fxaa/
-inline float3 DeterminePixelBlendFactor (ToonData td)
+inline float4 DeterminePixelBlendFactor(ToonData td)
 {
-#ifdef NINE_KERNEL
-	float3 filter = 2 * (td.n() + td.e() + td.s() + td.w());
-	filter += td.m();
+	float4 filter = td.m() * 2;
 	filter += td.ne() + td.nw() + td.se() + td.sw();
-	filter *= 1.0 / 13;
-#endif
-
-#ifdef FIVE_KERNEL
-	float3 filter = td.m() * 2;
-	filter += td.ne() + td.nw() + td.se() + td.sw();
-	filter /= 6.0;
-#endif
-	
-	const float3 blendFactor = smoothstep(0, 1, filter);
+	filter /= 6.0;	
+	const float4 blendFactor = smoothstep(0, 1, filter);
 	return blendFactor;
 }
 
@@ -216,29 +200,23 @@ inline float SampleToonOutline(float2 uv, float dist)
 
 	// 1.0/zw because y can be flipped! Yes it caused issues.
 	// https://forum.unity.com/threads/_maintex_texelsize-whats-the-meaning.110278/#post-1580744
-	const float2 kernelSize = (1.0 / _GTToonGrabTexture_TexelSize.zw) * kernelSizeMultiplier;
+	const float2 texelSize = (1.0 / _GTToonGrabTexture_TexelSize.zw);
+	const float2 kernelSize = texelSize * kernelSizeMultiplier;
 	
-	const SampleData sd = SamplePassKernel(uv, kernelSize);
+	const SampleData sd = SamplePassKernel(uv, texelSize, kernelSize);
 	const ToonData td = CalcToonKernel(sd);
-	const float3 pixelBlend = DeterminePixelBlendFactor(td);
-			
-	float depth = pixelBlend.x;
-	float averageDepth = sd.contrastZ;
-	float concavity = pixelBlend.y;
-	float convexity = pixelBlend.z;
+	const float4 pixelBlend = saturate(DeterminePixelBlendFactor(td));
 
-	const float fDepth = fwidth(depth) * _DepthEdgeSoftness;
-	depth = smoothstep(_DepthGradientMin - fDepth, _DepthGradientMax + fDepth, depth);
+	float concavity = pixelBlend.x;
+	float convexity = pixelBlend.y;
+	float depth = pixelBlend.z;
+	float id = pixelBlend.w;
 	
-	// I am adding contrast sample back over the as it has a wider falloff than pixelblend
-	// and can add to the softess/AA of the silhouette line.
-	// Also keeps silhouette better at a distance as the local equalized depth can produce
-	// an odd artifact at the edge.
-	// lerp 2 to 1 based on distance as up close it can create a kind 'halo' light grey around
-	// the main line.	
-	averageDepth = saturate(averageDepth * 2 * _DepthSilhouetteMultiplier);
+	depth = smoothstep(_DepthGradientMin, _DepthGradientMax, depth);
 	
-	depth = max(depth, averageDepth);
+	// TBH this is eyeballed ... maybe it needs to be changed?
+	const float idMult = lerp(1, 2, saturate(dist / 2));
+	depth = max(depth, id * idMult);
 
 	// curvatures
     const float concaveMult = lerp(_NormalSampleMult, _FarNormalSampleMult, saturate(dist / _FarDist));
@@ -248,8 +226,7 @@ inline float SampleToonOutline(float2 uv, float dist)
     convexity = saturate(convexity * convexMult);
 
     float curvature = max(concavity, convexity);
-	const float fMaxCurve = fwidth(curvature) * _NormalEdgeSoftness;
-    curvature = smoothstep(_NormalGradientMin - fMaxCurve, _NormalGradientMax + fMaxCurve, curvature);
+    curvature = smoothstep(_NormalGradientMin, _NormalGradientMax, curvature);
 
 	return max(depth, curvature);
 }

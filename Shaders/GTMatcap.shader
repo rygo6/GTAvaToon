@@ -1,4 +1,4 @@
-Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
+Shader "GeoTetra/GTAvaToon/IgnoreOutline/GTMatcap"
 {	
 	Properties
     {
@@ -10,78 +10,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
     	
     	[Tooltip(Multiply Diffuse Color by texture.)]
         _MainTex ("Diffuse Texture", 2D) = "white" {}
-	    
     	
-        [LargeHeader(Outline)]
-        
-        [Header(Outline Color)]
-    	[Tooltip(RGB color and alpha of outline.)]
-        _OutlineColor ("Outline Color", Color) = (0,0,0,1)
-    	
-    	[Tooltip(Multiply Outline Color by RGB color and alpha from texture.)]
-	    _OutlineColorTex ("Outline Color Texture", 2D) = "white" {}
-
-        [Header(Outline Size)]
-    	[Tooltip(Primary line size. Change this to control overall line thickness.)]
-    	_LineSize ("Line Size", Range(0, 2)) = .4
-    	
-    	[Tooltip(Line size when your view is zero distance from the surface. Change this to make the line thinner when up close.)]
-        _LineSizeNear ("Line Size Near", Range(0, 2)) = .1
-    	
-    	[Tooltip(The distance at which the line size will transition from Line Size Near to Line Size.)]
-        _NearLineSizeRange ("Near Line Size Range", Range(0, 4)) = 1
-
-    	
-    	[LargeHeader(Depth Outline)]
-    	
-        [Header(Depth Map)]
-    	[Tooltip(Set to be the total extents of the avatar. Should be same for all materials on avatar.)]
-        _BoundingExtents ("Depth Bounding Extents", Float) = .5
-            	
-    	[Tooltip(Lower value will capture more detail from the depth but the lines will be more aliased and grainy. As you adjust pay attention to AA quality of the line in game view.)]
-        _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .03
-    	
-        [Tooltip(Materials with different IDs will always have an outline drawn between them. Ideally set this to some random value so you draw outlines against others who also use GTAvaToon.)]
-        _DepthId ("Depth ID", Range(0,.99)) = 1
-    	
-        [Header(Depth Outline Gradient)]
-    	
-    	[Tooltip(Depth threshold to start drawing line. Lower value will make more detail.)]
-        _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = .05
-    	
-    	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
-        _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
-    	
-        [LargeHeader(Normal Outline)]
-    	
-    	[Header(Normal Outline Gradient)]
-    	
-    	[Tooltip(Depth threshold to start drawing line. Lower value will make more detail.)]
-        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-    	
-    	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .4
-    	
-        [Header(Concave Normal Outline Sampling)]
-    	
-    	[Tooltip(Line multplier for concave surface details. Should be kept at 1 while using Normal Gradient Min Max to adjust line details.)]
-        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
-    	
-    	[Tooltip(Line multplier for concave surface details at a far distance. Should be kept at 10 while using Normal Gradient Min Max to adjust line details.)]
-        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
-
-        [Header(Convex Normal Outline Sampling)]
-    	
-    	[Tooltip(Line multplier for convex surface details. Should be kept at 1 while using Normal Gradient Min Max to adjust line details.)]
-        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = 0
-    	
-    	[Tooltip(Line multplier for convex surface details at a far distance. Should be kept at 10 while using Normal Gradient Min Max to adjust line details.)]
-        _FarConvexSampleMult ("Far Convex Outline Multiplier", Range(0,10)) = 0
-                
-    	[Header(Normal Far Distance)]
-    	[Tooltip(The distance at which the Concave and Convex Outline Sampling Multipliers tranistion to the Far Concave and Convex Outline Sampling Multipliers.)]
-        _FarDist ("Normal Far Distance", Range(0,10)) = 10
-        
         [LargeHeader(Local Lighting)]
     	
     	[Header(Add Lighting)]
@@ -160,35 +89,13 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
     	[Tooltip(Average light probe values. 1 is fully averaged. 100 is no averaging.)]
     	_ProbeAverage ("Probe Average", Range(50,100)) = 80
     }	
-			
-	CustomEditor "GeoTetra.GTAvaToon.Editor.GTToonMatcapGUI"
-	
+
 	Subshader
     {
         Tags
         {
-            "Queue" = "Geometry+10" 
+            "Queue" = "Geometry+15" 
         	"RenderType" = "Opaque"
-        }
-
-        Pass
-        {        	
-        	Tags
-	        {
-				"IgnoreProjector" = "True"
-	        }
-	        HLSLPROGRAM	        
-	        #pragma target 5.0
-            #pragma vertex grabpass_vert
-            #pragma fragment grabpass_frag
-	        #pragma skip_variants DYNAMICLIGHTMAP_ON LIGHTMAP_ON LIGHTMAP_SHADOW_MIXING DIRLIGHTMAP_COMBINED
-	        #include "GTToonOutlineGrabPass.hlsl"
-            ENDHLSL
-        }
-
-        GrabPass
-        {
-            "_GTToonGrabTexture"
         }
 
         Pass
@@ -204,11 +111,9 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             #pragma fragment frag
 	        #pragma multi_compile_fwdbase
 	        #pragma skip_variants DYNAMICLIGHTMAP_ON LIGHTMAP_ON LIGHTMAP_SHADOW_MIXING DIRLIGHTMAP_COMBINED
-	        #pragma shader_feature _ ENABLE_OUTLINE
 	        
 	        #include "UnityCG.cginc"
 	        #include "AutoLight.cginc"
-	        #include "GTToonOutline.hlsl"
 	        #include "GTLit.hlsl"
 
             struct appdata
@@ -241,8 +146,6 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
             float4 _Color;
-
-	        float ENABLE_OUTLINE;
 	        	                    
             v2f vert(const appdata v)
             {
@@ -270,14 +173,12 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
             float4 frag(v2f i) : SV_Target
             {
             	const float3 normalizedWorldSpaceNormal = normalize(i.worldNormal);
-                const float2 screenUv  = i.scrPos.xy / i.scrPos.w;
             	
                 float4 sample = tex2D(_MainTex, TRANSFORM_TEX(i.uv0, _MainTex)) * _Color;
                 float3 diffuse = sample.xyz;
 
             	UNITY_LIGHT_ATTENUATION(attenuation, i, normalizedWorldSpaceNormal);
             	applyLighting(diffuse, i.uv0, attenuation, normalizedWorldSpaceNormal, i.worldPosition, i.color);
-                applyToonOutline(diffuse, screenUv, i.uv0, i.pos.w);
                 
                 return float4(diffuse, 1);
             }
