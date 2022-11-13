@@ -2,6 +2,7 @@
 #define GT_TOON_OUTLINE_GRAB_PASS_INCLUDED
 
 #include "UnityCG.cginc"
+#include "GTLit.hlsl"
 #include "VRChatCG.cginc"
 
 struct grabpass_appdata
@@ -9,6 +10,7 @@ struct grabpass_appdata
     float4 vertex : POSITION;
     float3 normal : NORMAL;
     float2 uv0 : TEXCOORD0;
+    float4 color : COLOR;
     #ifdef GT_OutlineGrabPass_APPDATA
         GT_OutlineGrabPass_APPDATA
     #endif
@@ -27,6 +29,7 @@ struct grabpass_v2f
 
 float _BoundingExtents;
 float _DepthId;
+float _DiscardVertexAOThreshold;
 
 inline float linearStep(float a, float b, float x)
 {
@@ -42,7 +45,8 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
 
     const float3 PlayerCenterCamera = VRC_CENTER_CAMERA_POS;
 
-    float3 position = v.vertex;
+    float4 lightingTexSample = _LightingColorTex.Load(int3(v.uv0.xy * _LightingColorTex_TexelSize.zw, 0));
+    float3 position = (v.color.r < _DiscardVertexAOThreshold && lightingTexSample.a != 0) ? 0. / 0. : v.vertex;
 
     // modify vertex positions in object space using this define
     #ifdef GT_OutlineGrabPass_OSVERTEX

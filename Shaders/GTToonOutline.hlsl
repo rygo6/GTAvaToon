@@ -5,7 +5,7 @@
 
 Texture2D _GTToonGrabTexture;
 float4 _GTToonGrabTexture_TexelSize;
-SamplerState _bilinear_clamp_Sampler;
+SamplerState _GTToonOutline_bilinear_clamp_sampler;
 
 // Outline Color
 float4 _OutlineColor;
@@ -18,42 +18,29 @@ float _NearLineSizeRange;
 
 // Depth Outline
 float _LocalEqualizeThreshold;
-float _DepthSilhouetteMultiplier;
 
 // Depth Outline Gradient
 float _DepthGradientMin;
 float _DepthGradientMax;
-float _DepthEdgeSoftness;
 
 // Normal Outline Gradient
 float _NormalGradientMin;
 float _NormalGradientMax;
-float _NormalEdgeSoftness;
 
-// Concave Normal Outline Sampling
-float _NormalSampleMult;
-float _FarNormalSampleMult;
-
-// Convex Normal Outline Sampling
-float _ConvexSampleMult;
-float _FarConvexSampleMult;
-
-// Normal Far Distance
-float _FarDist;
+// Normal Outline Gradient
+float _ConvexNormalGradientMin;
+float _ConvexNormalGradientMax;
 
 // N E S W
 #define DIRECTIONAL_SAMPLE_COUNT 4
 static const float2 _SampleOffsets[DIRECTIONAL_SAMPLE_COUNT] = { float2(0,1), float2(1,0), float2(0,-1), float2(-1,0) };
 
 // This is essentially the quincunx kernel
-
 // I find you can't make the kernel smaller than this and still get good results
 // because the distance between the samples is not large enough to produce a
 // meaningful min/max values to appropriately compress via _LocalEqualizeThreshold.
-
 // Also the extra smoothness of this kernel is ideal for thresholding min/max settings
 // to deal in the detailing of the outline.
-
 // M NE NW SE SW
 #define KERNEL_SAMPLE_COUNT 5
 static const float2 _KernelOffsets[KERNEL_SAMPLE_COUNT] = {
@@ -67,7 +54,6 @@ struct SampleData {
 	// x = depth, y = id
 	float2 depthMin;
 	float2 depthMax;
-	float2 depthContrast;
 };
 
 struct ToonData {
@@ -92,7 +78,7 @@ void SamplePass(out float4 samples[4], inout float2 minZ, inout float2 maxZ, flo
 	for (int sampleIndex = 0; sampleIndex < DIRECTIONAL_SAMPLE_COUNT; sampleIndex++)
 	{
 		const float2 sampleUv = uv + (_SampleOffsets[sampleIndex] * kernelSize);
-		const float4 sample = _GTToonGrabTexture.Sample(_bilinear_clamp_Sampler, sampleUv);
+		const float4 sample = _GTToonGrabTexture.Sample(_GTToonOutline_bilinear_clamp_sampler, sampleUv);
 		const float2 exNormalSample = sample.xy * 2.0 - 1.0;
 		samples[sampleIndex].xy = exNormalSample.xy;
 		samples[sampleIndex].zw = sample.zw;
@@ -105,13 +91,11 @@ void SamplePass(out float4 samples[4], inout float2 minZ, inout float2 maxZ, flo
 inline SampleData SamplePassKernel(float2 uv, float2 texelSize, float2 kernelSize)
 {
 	SampleData sd;
-	sd.depthMin = 10;
-	sd.depthMax = -10;
+	sd.depthMin = 1;
+	sd.depthMax = 0;
 
-	kernelSize = clamp(kernelSize, texelSize / 8, 100);
-	float2 difference = texelSize - (kernelSize * 2);
-	difference = difference < 0 ? 0 : difference;
-	float2 adjustedTexelSize = texelSize - difference;
+	const float2 difference = saturate(texelSize - (kernelSize * 2));
+	const float2 adjustedTexelSize = texelSize - difference;
 	
 	UNITY_UNROLL
 	for (int i = 0; i < KERNEL_SAMPLE_COUNT; ++i)
@@ -122,9 +106,7 @@ inline SampleData SamplePassKernel(float2 uv, float2 texelSize, float2 kernelSiz
 			uv + adjustedTexelSize * _KernelOffsets[i],
 			kernelSize);
 	}
-	
-	sd.depthContrast = sd.depthMax - sd.depthMin;
-	
+
 	return sd;
 }
 
@@ -168,13 +150,16 @@ inline ToonData CalcToonKernel(SampleData sd)
 {
 	ToonData td;
 
+	// if min/max get to close you get artifacts, so force a certain difference
+	float2 depthMax = clamp(sd.depthMax, sd.depthMin + .03, 1);
+
 	UNITY_UNROLL
 	for (int i = 0; i < KERNEL_SAMPLE_COUNT; ++i)
 	{
 		td.values[i] = CalcToon(
 			sd.samples[i],
 			sd.depthMin,
-			sd.depthMax);
+			depthMax);
 	}
 
 	return td;
@@ -188,6 +173,14 @@ inline float4 DeterminePixelBlendFactor(ToonData td)
 	filter /= 6.0;	
 	const float4 blendFactor = smoothstep(0, 1, filter);
 	return blendFactor;
+}
+
+// from the mighty bgolus https://bgolus.medium.com/distinctive-derivative-differences-cce38d36797b
+inline float4 FancyFWidth(float4 value)
+{
+	const float4 dx = ddx_fine(value);
+	const float4 dy = ddy_fine(value);
+	return max(dot(dx, dx), dot(dy, dy));
 }
 
 inline float SampleToonOutline(float2 uv, float dist)
@@ -206,27 +199,48 @@ inline float SampleToonOutline(float2 uv, float dist)
 	const SampleData sd = SamplePassKernel(uv, texelSize, kernelSize);
 	const ToonData td = CalcToonKernel(sd);
 	const float4 pixelBlend = saturate(DeterminePixelBlendFactor(td));
-
+		
 	float concavity = pixelBlend.x;
 	float convexity = pixelBlend.y;
 	float depth = pixelBlend.z;
 	float id = pixelBlend.w;
+
+	depth = smoothstep(
+		_DepthGradientMin,
+		_DepthGradientMax,
+		depth);
 	
-	depth = smoothstep(_DepthGradientMin, _DepthGradientMax, depth);
+	// TBH this farDepthDist/farNormalDist lerping and math is kind of eye-balled
+	// was once adjustable values but decided on some goods ones and to hardcode them
+	// may need to change in the future?
+	const float farDepthDist = 4;
+	const float idMult = lerp(.4, 1, saturate(dist / farDepthDist));
+	id = smoothstep(
+		.05,
+		idMult,
+		id);
 	
-	// TBH this is eyeballed ... maybe it needs to be changed?
-	const float idMult = lerp(1, 2, saturate(dist / 2));
-	depth = max(depth, id * idMult);
+	depth = max(depth, id);
 
 	// curvatures
-    const float concaveMult = lerp(_NormalSampleMult, _FarNormalSampleMult, saturate(dist / _FarDist));
+	const float farNormalDist = 10;
+	const float normalMult = 1;
+	const float farNormalMult = 10;
+    const float concaveMult = lerp(normalMult, farNormalMult, saturate(dist / farNormalDist));
     concavity = saturate(concavity * concaveMult);
+	concavity = smoothstep(
+		_NormalGradientMin,
+		_NormalGradientMax,
+		concavity);
     
-    const float convexMult = lerp(_ConvexSampleMult, _FarConvexSampleMult, saturate(dist / _FarDist));
+    const float convexMult = lerp(normalMult, farNormalMult, saturate(dist / farNormalDist));
     convexity = saturate(convexity * convexMult);
+	convexity = smoothstep(
+		_ConvexNormalGradientMin,
+		_ConvexNormalGradientMax,
+		convexity);
 
-    float curvature = max(concavity, convexity);
-    curvature = smoothstep(_NormalGradientMin, _NormalGradientMax, curvature);
+	const float curvature = max(concavity, convexity);
 
 	return max(depth, curvature);
 }
@@ -241,7 +255,7 @@ inline void applyToonOutline(inout float3 col, float2 screenUv, float4 outlineCo
 // Standard overload where outline color and alpha is sampled from texture.
 inline void applyToonOutline(inout float3 col, float2 screenUv, float2 mainUv, float dist)
 {
-	const float4 outlineColor = _OutlineColorTex.Sample(_bilinear_clamp_Sampler, mainUv) * _OutlineColor;
+	const float4 outlineColor = _OutlineColorTex.Sample(_GTToonOutline_bilinear_clamp_sampler, mainUv) * _OutlineColor;
 	applyToonOutline(col, screenUv, outlineColor, dist);
 }
 

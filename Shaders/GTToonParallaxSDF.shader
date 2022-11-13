@@ -44,21 +44,24 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         [Header(Depth Outline Gradient)]
         _DepthGradientMin ("Depth Outline Gradient Min", Range(0, 1)) = 0.05
         _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
-
-        [Header(Concave Normal Outline Sampling)]
-        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
-        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
-
-        [Header(Convex Normal Outline Sampling)]
-        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = 0
-        _FarConvexSampleMult ("Far Convex Outline Multiplier", Range(0,10)) = 0
-
+        
         [Header(Normal Outline Gradient)]
-        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .4
-
-        [Header(Far)]
-        _FarDist ("Far Distance", Range(0,10)) = 10
+        
+        [Header(Concave Normal Outline)]
+    	
+    	[Tooltip(Depth threshold to start drawing line from normal concavity. Lower value will make more detail.)]
+        _NormalGradientMin ("Concave Normal Outline Gradient Min", Range(0, 1)) = 0
+    	
+    	[Tooltip(Depth threshold by which the line will fade out from normal concavity. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+        _NormalGradientMax ("Concave Normal Outline Gradient Max", Range(0, 1)) = .4
+        
+        [Header(Convex Normal Outline Sampling)]
+    	
+    	[Tooltip(Depth threshold to start drawing line from normal convexity. Lower value will make more detail.)]
+        _ConvexNormalGradientMin ("Convex Normal Outline Gradient Min", Range(0, 1)) = .8
+    	
+    	[Tooltip(Depth threshold by which the line will fade out from normal convexity. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+        _ConvexNormalGradientMax ("Convex Normal Outline Gradient Max", Range(0, 1)) = 1
 
         [Header(### Shading)]
 
@@ -85,6 +88,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         
         [Header(AO Vertex Color)]
         _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
+        _DiscardVertexAOThreshold ("Discard Vertex AO Threshold", Range(0,.01)) = 0
         
         [Header(Direct Light Levels)]
         _DirectBlackLevel ("DirectBlackLevel", Range(0,1)) = 0
@@ -194,6 +198,8 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             float _SDF2Threshold;
             float _ParallaxHeight;
             
+            float _DiscardVertexAOThreshold;
+            
             v2f vert(const appdata v)
             {
                 v2f o;
@@ -201,7 +207,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.pos = UnityObjectToClipPos(v.vertex);
+                o.pos = v.color.r < _DiscardVertexAOThreshold ? 0. / 0. : UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
 
                 o.uv0 = v.uv0;

@@ -42,7 +42,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _LocalEqualizeThreshold ("Depth Local Adaptive Equalization Threshold", Range(0.01, .1)) = .03
     	
         [Tooltip(Materials with different IDs will always have an outline drawn between them. Ideally set this to some random value so you draw outlines against others who also use GTAvaToon.)]
-        _DepthId ("Depth ID", Range(0,.99)) = 1
+        _DepthId ("Depth ID", Range(.02,.98)) = 1
     	
         [Header(Depth Outline Gradient)]
     	
@@ -53,35 +53,23 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
         _DepthGradientMax ("Depth Outline Gradient Max", Range(0, 1)) = 0.4
     	
         [LargeHeader(Normal Outline)]
+        
+        [Header(Concave Normal Outline)]
     	
-    	[Header(Normal Outline Gradient)]
+    	[Tooltip(Depth threshold to start drawing line from normal concavity. Lower value will make more detail.)]
+        _NormalGradientMin ("Concave Normal Outline Gradient Min", Range(0, 1)) = 0
     	
-    	[Tooltip(Depth threshold to start drawing line. Lower value will make more detail.)]
-        _NormalGradientMin ("Normal Gradient Min", Range(0, 1)) = 0
-    	
-    	[Tooltip(Depth threshold by which the line will fade out. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
-        _NormalGradientMax ("Normal Gradient Max", Range(0, 1)) = .4
-    	
-        [Header(Concave Normal Outline Sampling)]
-    	
-    	[Tooltip(Line multplier for concave surface details. Should be kept at 1 while using Normal Gradient Min Max to adjust line details.)]
-        _NormalSampleMult ("Concave Outline Sampling Multiplier", Range(0,10)) = 1
-    	
-    	[Tooltip(Line multplier for concave surface details at a far distance. Should be kept at 10 while using Normal Gradient Min Max to adjust line details.)]
-        _FarNormalSampleMult ("Far Concave Outline Multiplier", Range(0,10)) = 10
-
+    	[Tooltip(Depth threshold by which the line will fade out from normal concavity. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+        _NormalGradientMax ("Concave Normal Outline Gradient Max", Range(0, 1)) = .4
+        
         [Header(Convex Normal Outline Sampling)]
     	
-    	[Tooltip(Line multplier for convex surface details. Should be kept at 1 while using Normal Gradient Min Max to adjust line details.)]
-        _ConvexSampleMult ("Convex Outline Sampling Multiplier", Range(0,10)) = 0
+    	[Tooltip(Depth threshold to start drawing line from normal convexity. Lower value will make more detail.)]
+        _ConvexNormalGradientMin ("Convex Normal Outline Gradient Min", Range(0, 1)) = .8
     	
-    	[Tooltip(Line multplier for convex surface details at a far distance. Should be kept at 10 while using Normal Gradient Min Max to adjust line details.)]
-        _FarConvexSampleMult ("Far Convex Outline Multiplier", Range(0,10)) = 0
+    	[Tooltip(Depth threshold by which the line will fade out from normal convexity. Lower value will make more detail but will cause lines to be more aliased and grainy.)]
+        _ConvexNormalGradientMax ("Convex Normal Outline Gradient Max", Range(0, 1)) = 1
                 
-    	[Header(Normal Far Distance)]
-    	[Tooltip(The distance at which the Concave and Convex Outline Sampling Multipliers tranistion to the Far Concave and Convex Outline Sampling Multipliers.)]
-        _FarDist ("Normal Far Distance", Range(0,10)) = 10
-        
         [LargeHeader(Local Lighting)]
     	
     	[Header(Add Lighting)]
@@ -110,6 +98,9 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
     	
     	[Tooltip(Amount to multiply the AO baked into vertices.)]
         _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
+    	
+    	[Tooltip(If you baked AO into the vertex colors this will discard vertices below a certain value. Can use it to prevent avatar body from clipping through clothes. This does obey the Light Color and Lighting Color Texture alpha. )]
+    	_DiscardVertexAOThreshold ("Discard Vertex AO Darkness Threshold", Range(0,.01)) = 0
         
         [Header(Rim Light)]
     	
@@ -241,8 +232,7 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
             float4 _Color;
-
-	        float ENABLE_OUTLINE;
+	        float _DiscardVertexAOThreshold;
 	        	                    
             v2f vert(const appdata v)
             {
@@ -251,7 +241,9 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
             	
-                o.pos = UnityObjectToClipPos(v.vertex);
+                float4 lightingTexSample = _LightingColorTex.Load(int3(v.uv0.xy * _LightingColorTex_TexelSize.zw, 0));
+                o.pos = (v.color.r < _DiscardVertexAOThreshold && lightingTexSample.a != 0) ? 0. / 0. : UnityObjectToClipPos(v.vertex);
+                // o.pos = UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
             	
                 o.uv0 = v.uv0;

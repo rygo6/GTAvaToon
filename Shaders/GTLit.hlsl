@@ -16,10 +16,13 @@
 #include "VRChatCG.cginc"
 #include "Lighting.cginc"
 
-sampler2D _LightingColorTex;
+Texture2D _LightingColorTex;
+float4 _LightingColorTex_TexelSize;
 float4 _LightingColor;
 
-sampler2D _MatCapTex;
+Texture2D _MatCapTex;
+
+SamplerState _GTLit_bilinear_clamp_Sampler;
 
 float _MatCapMult;
 float _MatCapAdd;
@@ -69,7 +72,7 @@ inline LitData calcLitData(float3 normalizedWorldNormal, float3 worldPosition)
 
 inline void applyMatcap(inout float3 col, const float2 matcapUV, const float fileAlpha)
 {
-    float3 mc = tex2D(_MatCapTex, float2(lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.x ), lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.y)));
+    const float4 mc = _MatCapTex.Sample(_GTLit_bilinear_clamp_Sampler, float2(lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.x ), lerp(_MatCapInset, 1 - _MatCapInset, matcapUV.y)));
     col.rgb = lerp(col, col * mc, _MatCapMult * fileAlpha);
     // https://photoblogstop.com/photoshop/photoshop-blend-modes-explained
     float3 screenCol = 1 - (1 - mc) * (1 - col); // screen
@@ -220,7 +223,7 @@ inline void applyAOVertexColors(inout float3 col, float3 vertexColor, float file
 // Overload for when cameraPos is supplied
 inline void applyLighting(inout float3 col, float2 uv, float attenuation, float3 normalizedWorldSpaceNormal, float3 worldPosition, float3 aoVertColor)
 {
-    float4 lightColorSample = tex2D(_LightingColorTex, uv) * _LightingColor;
+    const float4 lightColorSample = _LightingColorTex.Sample(_GTLit_bilinear_clamp_Sampler, uv) * _LightingColor;
     applyAOVertexColors(col, aoVertColor, lightColorSample.a);
     applyLocalLighting(col, normalizedWorldSpaceNormal, worldPosition, lightColorSample.a);
     applyWorldLighting(col, normalizedWorldSpaceNormal, attenuation);
