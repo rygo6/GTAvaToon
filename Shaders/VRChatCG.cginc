@@ -1,6 +1,6 @@
 // Third-Party VRChatCG.cginc intended to be a repository of explicitly VRChat specific
 // implementations that you can always import into any project.
-
+// Maintained Here: https://github.com/rygo6/VRChatCGinc
 // Unlicensed: https://unlicense.org/
 
 #ifndef VRCHAT_CG_INCLUDED
