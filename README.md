@@ -1,12 +1,14 @@
 # GTAvaToon
 
+The official root repository for this project is here https://github.com/rygo6/GTAvaToon.
+
 ## What? Why?
 
 Another VRChat Avatar Toon shader!? Why!?
 
 Well, this one is quite different from the others. 
 
-My time spent in VRChat taught me a number of things about the nuances of avatars in a Social VR or "VR Metaverse" context. This specific use case is different enough from typical 3D games that it necessitates some new mentalities and designs for shaders. This is an attempt to start producing something tangible from what I have learned. To go more in depth on the "Why" behind all this, go to the [Learnings and Reasoning](#Learnings and Reasoning) section.
+My time spent in VRChat taught me a number of things about the nuances of avatars in a Social VR or "VR Metaverse" context. This specific use case is different enough from typical 3D games that it necessitates some new mentalities and designs for shaders. This is an attempt to start producing something tangible from what I have learned. To go more in depth on the "Why" behind all this, go to the [Learnings and Reasoning](#learnings-and-reasonings) section.
 
 ### Unique Features and Technical Aspects
 
@@ -65,7 +67,9 @@ This is a shader that will ignore the outline. You may find that smaller thinner
 
 Technically any shader can be set to ignore the outline by putting its rendering queue higher than 2010.
 
-## Learnings and Reasoning
+Join the GeoTetra Discord for further discussion and help. https://discord.gg/nbzqtaVP9J
+
+## Learnings and Reasonings
 
 ### 1. People care more about their avatar's lighting looking exactly how they want more than they care about it being realistic or matching the world or anything else.
 
