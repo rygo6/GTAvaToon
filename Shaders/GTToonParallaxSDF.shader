@@ -88,7 +88,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
         
         [Header(AO Vertex Color)]
         _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
-        _DiscardVertexAOThreshold ("Discard Vertex AO Threshold", Range(0,.01)) = 0
+        _DiscardVertexAOThreshold ("Discard Vertex AO Threshold", Range(0,.1)) = 0
         
         [Header(Direct Light Levels)]
         _DirectBlackLevel ("DirectBlackLevel", Range(0,1)) = 0
@@ -207,7 +207,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.pos = v.color.r < _DiscardVertexAOThreshold ? 0. / 0. : UnityObjectToClipPos(v.vertex);
+                o.pos = v.color.a < _DiscardVertexAOThreshold ? 0. / 0. : UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
 
                 o.uv0 = v.uv0;
@@ -226,7 +226,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
             }
             
             float4 frag(v2f i) : SV_Target
-            {                
+            {
                 const float3 normalizedWorldSpaceNormal = normalize(i.worldNormal);
                 const float2 screenUv = i.scrPos.xy / i.scrPos.w;
 

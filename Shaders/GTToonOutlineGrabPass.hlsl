@@ -2,7 +2,6 @@
 #define GT_TOON_OUTLINE_GRAB_PASS_INCLUDED
 
 #include "UnityCG.cginc"
-#include "GTLit.hlsl"
 #include "VRChatCG.cginc"
 
 struct grabpass_appdata
@@ -44,9 +43,8 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     const float3 PlayerCenterCamera = VRC_CENTER_CAMERA_POS;
-
-    float4 lightingTexSample = _LightingColorTex.Load(int3(v.uv0.xy * _LightingColorTex_TexelSize.zw, 0));
-    float3 position = (v.color.r < _DiscardVertexAOThreshold && lightingTexSample.a != 0) ? 0. / 0. : v.vertex;
+    
+    float3 position = v.color.a < _DiscardVertexAOThreshold ? 0. / 0. : v.vertex;
 
     // modify vertex positions in object space using this define
     #ifdef GT_OutlineGrabPass_OSVERTEX

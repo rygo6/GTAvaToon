@@ -37,8 +37,11 @@ Shader "GeoTetra/GTAvaToon/IgnoreOutline/GTMatcap"
     	
     	[Header(AO Vertex Color)]
     	
-    	[Tooltip(Amount to multiply the AO baked into vertices.)]
+    	[Tooltip(Amount to multiply the AO baked into vertices. You can bake this data with the Bake Vertex AO On Selected function in GTAvaUtil.)]
         _VertexColorBlend ("AO Vertex Color Alpha", Range(0,2)) = 0
+    	
+    	[Tooltip(Discard vertex if certex color alpha is below this threshold. Can use it to prevent avatar body from clipping through clothes. You can bake this data with the Bake Vertex Visibility Onto First Selected function in GTAvaUtil.)]
+    	_DiscardVertexAOThreshold ("Discard Vertex AO Darkness Threshold", Range(0,.1)) = 0
         
         [Header(Rim Light)]
     	
@@ -146,6 +149,7 @@ Shader "GeoTetra/GTAvaToon/IgnoreOutline/GTMatcap"
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
             float4 _Color;
+	        float _DiscardVertexAOThreshold;
 	        	                    
             v2f vert(const appdata v)
             {
@@ -154,7 +158,7 @@ Shader "GeoTetra/GTAvaToon/IgnoreOutline/GTMatcap"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
             	
-                o.pos = UnityObjectToClipPos(v.vertex);
+                o.pos = v.color.a < _DiscardVertexAOThreshold ? 0. / 0. : UnityObjectToClipPos(v.vertex);
                 o.scrPos = ComputeGrabScreenPos(o.pos);
             	
                 o.uv0 = v.uv0;
