@@ -20,7 +20,7 @@ My time spent in VRChat taught me a number of things about the nuances of avatar
 
 - Another major premise of this shader is to get it's interpretation of world lighting to look consistent and good across any kind of world lighting setup, even if that world lighting setup is terrible. The lighting math of this shader is partially derived from [this great project](https://github.com/lukis101/VRCUnityStuffs/tree/master/SH) which was an exploration in different Spherical Harmonics techniques. I tested all of them in a wide range of worlds with really terrible lighting, chose one that seems to produce the best results on average and added another tweak. What this means is worlds with whacky light probe data will still look good with this shader. I still have yet to find a world with light probe data that this shader can't make look decent. If you find one, please point it out to me. I also tuned, and hardcoded, a lot of lighting values so that lighting entirely from Light Probes looks ~roughly~ the same as lighting from Light Probes + Dynamic Directional Light.
 
-Again, to understand more of the reasoning behind these design choices go to the [Learnings and Reasoning](#Learnings and Reasoning) section.
+Again, to understand more of the reasoning behind these design choices go to the [Learnings and Reasoning](#learnings-and-reasonings) section.
 
 ### Limitations + Todo
 - Toon outlines will not look correct in the Scene View due to the Scene View not having MSAA. Look at them through the game view when adjusting. There is nothing that will be able to fix this.
