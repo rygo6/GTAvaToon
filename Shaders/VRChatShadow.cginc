@@ -12,6 +12,7 @@
         }
 */
 
+// Maintained Here: https://github.com/rygo6/VRChatCGinc
 // Unlicensed: https://unlicense.org/
 
 #ifndef VRCHAT_SHADOW_INCLUDED
