@@ -12,8 +12,9 @@ My time spent in VRChat taught me a number of things about the nuances of avatar
 
 ### Unique Features and Technical Aspects
 
-- The outline is done in a way similar to modern cell shaded games where it samples the normal and depth map. No other avatar shader that works in VRChat draws a toon outline in this manner. This produces a much more detailed and accurate toon outline compared to the inverse hull method every other avatar shader in VRChat currently uses.
+- The outline is done in a way similar to modern cell shaded games where it samples the normal and depth map. No other avatar shader that works in VRChat draws a toon outline in this manner. This produces a much more detailed and accurate toon outline compared to the inverse hull method every other avatar shader in VRChat currently uses. See comparison in below image for further explanation.
 
+![BakeAO](Media~/outlinecomparison.png)
 
 - The lighting model is designed around a novel concept of `Local Lighting` and `World Lighting` specifically to give you greater control over your avatar's lighting and how the world lighting affects it. A major premise behind the design of this shader is that ***you cannot trust the world lighting!*** This intentionally breaks physically accurate lighting to give you more 'Photoshop-like' controls on how to specifically dial in how the world lighting affects your avatar so that you can tame whacky world lighting and keep it within constraints that will always look good.
 
