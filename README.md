@@ -12,7 +12,7 @@ My time spent in VRChat taught me a number of things about the nuances of avatar
 
 ### Unique Features and Technical Aspects
 
-- The outline is done in a way similar to modern cell shaded games where it samples the normal and depth map. No other avatar shader that works in VRChat draws a toon outline in this manner. This produces a much more detailed and accurate toon outline compared to the inverse hull method every other avatar shader in VRChat currently uses. See comparison in below image for further explanation.
+- The outline is done in a way similar to modern cel shaded games where it samples the normal and depth map. This the first VRChat avatar shader that draw a toon outline in this manner. This produces a much more detailed and accurate toon outline compared to the inverse hull method every other avatar shader in VRChat currently uses. See comparison in the image below for further explanation.
 
 ![BakeAO](Media~/outlinecomparison.png)
 
