@@ -114,6 +114,7 @@ Shader "GeoTetra/Expirimental/GTToonParallaxSDF"
 	        {
 				"IgnoreProjector" = "True"
 	        }
+            Cull Off
             HLSLPROGRAM
 	        #pragma target 5.0
             #pragma vertex grabpass_vert

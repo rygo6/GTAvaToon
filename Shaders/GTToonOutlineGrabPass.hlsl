@@ -72,9 +72,9 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     return o;
 }
 
-float4 grabpass_frag(grabpass_v2f i) : SV_Target
+float4 grabpass_frag(grabpass_v2f i, bool IsFacing : SV_IsFrontFace) : SV_Target
 {
-    return i.normal_depth;
+    return IsFacing ? i.normal_depth : float4(0, 0, 0, 1);
 }
 
 #endif
