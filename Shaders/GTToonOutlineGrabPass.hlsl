@@ -59,7 +59,27 @@ grabpass_v2f grabpass_vert(const grabpass_appdata v)
     #endif
 
     o.pos = UnityWorldToClipPos(worldPos);
-    
+
+    // If you are wondering wtf am I doing depth like this? The purpose is to compress
+    // the relevant depth data to the extents of the avatar so you can fit more
+    // depth into the low precision framebuffer. In worlds which do not have HDR
+    // enabled, and are using a low precision framebuffer, there is not enough data
+    // in the depth to produce outlines without bad artifacting due to the bands
+    // If VRC ever FORCES high precision framebuffers this could be changed. But
+    // this also evades the issue of needing a light in the world to force camera depth on.
+    //
+    // Then if your also wondering WTF am I manually inputting the extents instead of calcing
+    // it, its because the extents value needs to be the same for all meshes of an avatar
+    // otherwise the other depth settings will not be consistent across meshes.
+    //
+    // Then even further if your wondering WTF am I using a grabpass for depth? Depth is not
+    // actually the primary purpose for the grabpass, the normals are. There is no way to calc
+    // non-faceted normals off the depth of the framebuffer, and rendering normals in a GrabPass
+    // produces normals that respect the mesh smoothing. This is absolutely necessary to use the
+    // normals to draw concave/convex outlines off of. But since I only need two channels for
+    // normal data I decided to also put depth in here too as then I can use the extents compressing
+    // trick to get around issues with low precision framebuffers, then I could also encode in other data
+    // like the "DepthID" to let me get even more detail.
     const float4 centerPos = mul(unity_ObjectToWorld, float4(0,0,0,1));
     const float centerDis = distance(centerPos, PlayerCenterCamera);
     const float dist = distance(worldPos, PlayerCenterCamera);
