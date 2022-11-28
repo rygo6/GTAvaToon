@@ -42,6 +42,9 @@ Again, to understand more of the reasoning behind these design choices go to the
 3. Select 'Add package from git url...'.
 4. Paste `https://github.com/rygo6/GTAvaToon.git` into the dialogue and click 'Add'.
 
+It might complain about git not being installed. If that happens, you install it from here: https://git-scm.com/
+Alternatively, the VRChat Creator Companion, which I personally think you should use, should also install git. You can install the VRChat Creator Companion from here: https://vcc.docs.vrchat.com/
+
 ## Usage
 
 Currently the shaders ready to be used are:
