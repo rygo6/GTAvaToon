@@ -132,8 +132,30 @@ inline float3 calcFinalLight(float3 diffuse, float3 shLight, float3 directLight)
     return saturate(finalLight);
 }
 
-//https://github.com/lukis101/VRCUnityStuffs/blob/master/SH/s_SH_Wrapped.shader
-// http://www.geomerics.com/wp-content/uploads/2015/08/CEDEC_Geomerics_ReconstructingDiffuseLighting1.pdf
+/// shEvaluateDiffuseL1Geomerics_local and BetterSH9 methods are MIT Licensed and are derived from:
+/// https://github.com/lukis101/VRCUnityStuffs/blob/master/SH/s_SH_Wrapped.shader
+///
+/// MIT License
+///
+/// Copyright (c) 2019 Dj Lukis.LT
+///
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+///
+/// The above copyright notice and this permission notice shall be included in all
+/// copies or substantial portions of the Software.
+///
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+/// SOFTWARE.
 float shEvaluateDiffuseL1Geomerics_local(float L0, float3 L1, float3 n)
 {
     // average energy
@@ -159,7 +181,6 @@ float shEvaluateDiffuseL1Geomerics_local(float L0, float3 L1, float3 n)
 
     return R0 * (a + (1.0f - a) * (p + 1.0f) * pow(q, p));
 }
-
 float3 BetterSH9(float3 normal)
 {
     float probeAverage = 101 - _ProbeAverage;
@@ -175,6 +196,7 @@ float3 BetterSH9(float3 normal)
     nonLinearSH = max(nonLinearSH, 0);
     return nonLinearSH;
 }
+
 
 // Return Direct + Ambient if all baked in probes, or just ambient if relying on realtime direct light
 inline float3 calcSHLighting(float3 normalizedWorldSpaceNormal)
