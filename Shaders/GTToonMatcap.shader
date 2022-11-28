@@ -13,7 +13,8 @@ Shader "GeoTetra/GTAvaToon/Outline/GTToonMatcap"
 	    
     	
         [LargeHeader(Outline)]
-        
+        [OutlineAttribution]
+    	
         [Header(Outline Color)]
     	[Tooltip(RGB color and alpha of outline.)]
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
