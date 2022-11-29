@@ -22,8 +22,6 @@ My time spent in VRChat taught me a number of things about the nuances of avatar
 #### Different Lighting Math to Smooth Over Bad World Lighting
 - Another major premise of this shader is to get it's interpretation of world lighting to look consistent and good across any kind of world lighting setup, even if that world lighting setup is terrible. The lighting math of this shader is partially derived from [this great project](https://github.com/lukis101/VRCUnityStuffs/tree/master/SH) which was an exploration in different Spherical Harmonics techniques. I tested all of them in a wide range of worlds with terrible lighting and chose one that produces the best results on average, then added another tweak. This lighting math does omit detail, so it is "averaged out" and not physically accurate, but physical accuracy is not the point of this. The purpose is to prevent wacky light probes from looking bad, while still partly matching the world lighting. 
 - I also tuned it so that lighting entirely from Light Probes looks roughly the same as lighting from Light Probes + Single Directional Light. _I haven't implemented point or spot light support yet, so there is still discrepancies with those!_
-#### Automatically Hide Meshes Behind Your Clothes
-- In combination with [GTAvaUtil](https://github.com/rygo6/GTAvaUtil) the `Discard Vertex AO Darkness Threshold` setting on this shader can automatically hide the vertices of your avatar's body that are behind clothes to prevent clipping. _This doesn't really work right now if you can change your avatar's clothes, but I may deal with that in the future._
 
 Again, to understand more of the reasoning behind these design choices go to the [Learnings and Reasoning](#learnings-and-reasonings) section.
 
